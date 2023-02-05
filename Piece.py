@@ -37,7 +37,7 @@ class Piece:
     
     def _pawn_moves(self) -> list:
         """
-        Gets first set of legal moves based on piece's movement
+        Gets first set of legal pawn moves based on piece's movement
         """
         result = []
         # If white
@@ -53,6 +53,11 @@ class Piece:
             if self.position.x + i >= 0 and self.position.x + i <= 7:
                 result.append(Coord(self.position.x + i, self.position.y + direction))
         return result
+    
+    def _knight_moves(self) -> list:
+        """
+        Gets first set of legal knight moves based on piece's movement
+        """
 
 
 if __name__ == '__main__':
