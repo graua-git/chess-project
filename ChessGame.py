@@ -10,11 +10,25 @@ class InvalidMoveError(Exception):
 
 class ChessGame():
     def __init__(self, moves: str = None):
-        self.board = self.init_new_board()
+        self.board = self._init_new_board()
         self.turn = 'White'
         self.winner = None
+
+    def __repr__(self):
+        """
+        Converts ChessGame into readable string
+        """
+        result = '--------------------------------------------------------------- \n'
+        for y in reversed(range(8)):
+            for x in range(8):
+                result += str(self.board[x][y])
+                if self.board[x][y] == None:
+                    result += '  '
+                result += ', '
+            result += (' \n \n')
+        return result + '---------------------------------------------------------------'
     
-    def init_new_board(self):
+    def _init_new_board(self):
         """
         Creates a 2D array to represent the chess board in the starting position
         """
@@ -99,7 +113,6 @@ class ChessGame():
         
         # Check if it is a legal move
         legal_moves = self.get_legal_moves(piece)
-        cont = False
         try:
             if to_coord not in legal_moves:
                 raise InvalidMoveError
@@ -123,22 +136,8 @@ class ChessGame():
         Returns list of coordinates to represent legal squares piece can move to
         piece: Piece to move
         """
-        primary_legal_moves = piece.legal_moves()
+        primary_legal_moves = piece.legal_moves(self.board)
         return primary_legal_moves
-
-    def __repr__(self):
-        """
-        Converts ChessGame into readable string
-        """
-        result = ''
-        for y in reversed(range(8)):
-            for x in range(8):
-                result += str(self.board[x][y])
-                if self.board[x][y] == None:
-                    result += '  '
-                result += ', '
-            result += (' \n \n')
-        return result
 
 
 if __name__ == '__main__':
@@ -147,6 +146,13 @@ if __name__ == '__main__':
     print(game.get_material_difference())
     game.make_move(Coord(4, 1), Coord(4, 3))
     game.make_move(Coord(3, 6), Coord(3, 4))
-    print(game)
     game.make_move(Coord(4, 3), Coord(3, 4))
+    print(game)
+    game.make_move(Coord(6, 7), Coord(5, 5))
+    print(game)
+    game.make_move(Coord(1, 0), Coord(2, 2))
+    print(game)
+    game.make_move(Coord(5, 5), Coord(3, 4))
+    print(game)
+    game.make_move(Coord(2, 2), Coord(3, 4))
     print(game)

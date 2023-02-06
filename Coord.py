@@ -5,7 +5,10 @@ class Coord():
         self.x = x
         self.y = y
         letters = 'abcdefgh'
-        self.chess = letters[x] + str(y + 1)
+        if x < 8:
+            self.chess = letters[x] + str(y + 1)
+        else:
+            self.chess = '-' + str(y + 1)
 
     def __repr__(self):
         return self.chess
