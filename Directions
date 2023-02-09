@@ -1,6 +1,0 @@
-class Directions:
-    self.knight =
-    self.bishop =
-    self.rook =
-    self.queen =
-    self.king =

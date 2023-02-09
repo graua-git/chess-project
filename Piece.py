@@ -1,7 +1,11 @@
 # Definition for Piece class
 
 from Coord import Coord
+from Directions import Directions
+
 from Functions import *
+
+directions = Directions()
 
 class Piece:
     def __init__(self, name: str, team: str, value: int, position: Coord):
@@ -102,59 +106,53 @@ class Piece:
         board: 2D list representing current chess board
         returns: preliminary list of legal moves piece can make
         """
-        result = []
-        # Get all 8 permutations of directions
-        directions = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
-        
-        for direction in directions:
-            next_pos = Coord(self.position.x + direction[0], self.position.y + direction[1])
-            # In bounds
-            if next_pos.x >= 0 and next_pos.x <= 7 and next_pos.y >= 0 and next_pos.y <= 7:
-                # Not occupied by own piece
-                if board[next_pos.x][next_pos.y] is not None:
-                    if board[next_pos.x][next_pos.y].get_team() == self.team:
-                        continue
-                result.append(next_pos)
-
-        return result
+        return self._single_moves(directions.knight, board)
 
     # -------------------------------------- Bishop --------------------------------------
     def _bishop_moves(self, board: list) -> list:
         """
-        Gets first set of legal knight moves based on piece's movement
+        Gets first set of legal bishop moves based on piece's movement
         A bishop can move diagonally in all 4 directions
         board: 2D list representing current chess board
         returns: preliminary list of legal moves piece can make
         """
-        directions = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
-        return self._continuous_moves(directions, board)
+        return self._continuous_moves(directions.bishop, board)
 
     # -------------------------------------- Rook --------------------------------------
     def _rook_moves(self, board: list) -> list:
         """
-        Gets first set of legal knight moves based on piece's movement
+        Gets first set of legal rook moves based on piece's movement
         A rook can move horizontally or vertically in any direction
         board: 2D list representing current chess board
         returns: preliminary list of legal moves piece can make
         """
-        directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
-        return self._continuous_moves(directions, board)
+        return self._continuous_moves(directions.rook, board)
     
     # -------------------------------------- Queen --------------------------------------
     def _queen_moves(self, board: list) -> list:
         """
-        Gets first set of legal knight moves based on piece's movement
+        Gets first set of legal queen moves based on piece's movement
         A queen can move horizontally, vertically, or diagonally in any direction
         board: 2D list representing current chess board
         returns: preliminary list of legal moves piece can make
         """
-        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        return self._continuous_moves(directions, board)
+        return self._continuous_moves(directions.queen, board)
+    
+    # -------------------------------------- King --------------------------------------
+    def _king_moves(self, board: list) -> list:
+        """
+        Gets first set of legal king moves based on piece's movement
+        A king can move one square away in any direction
+        board: 2D list representing current chess board
+        returns: preliminary list of legal moves piece can make
+        """
+        return self._single_moves(directions.king, board)
 
 
     def _continuous_moves(self, directions: list, board: list) -> list:
         """
-        Function to get moves for bishop, rook, or queen based on which directions they can move in
+        Function to get moves for bishop, rook, or queen based on which directions they can move in.
+        These pieces can move continuously in their given directions
         directions: list of tuples of two ints to represent directions in which the piece can move
         board: 2D list representing current chess board
         returns: preliminary list of legal moves piece can make
@@ -181,7 +179,26 @@ class Piece:
                 else:
                     result.append(next_pos)
                     break
+        return result
 
+    def _single_moves(self, directions: list, board: list) -> list:
+        """
+        Function to get moves for knight or king based on which directions they can move in.
+        These pieces can only move one square in their given direction 
+        directions: list of tuples of two ints to represent directions in which the piece can move
+        board: 2D list representing current chess board
+        returns: preliminary list of legal moves piece can make
+        """
+        result = []
+        for direction in directions:
+            next_pos = Coord(self.position.x + direction[0], self.position.y + direction[1])
+            # In bounds
+            if next_pos.x >= 0 and next_pos.x <= 7 and next_pos.y >= 0 and next_pos.y <= 7:
+                # Not occupied by own piece
+                if board[next_pos.x][next_pos.y] is not None:
+                    if board[next_pos.x][next_pos.y].get_team() == self.team:
+                        continue
+                result.append(next_pos)
         return result
 
 

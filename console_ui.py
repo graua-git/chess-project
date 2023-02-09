@@ -8,3 +8,4 @@ if __name__ == '__main__':
         print('Unexpected Answer, please type Y for new game, or N to set a starting position')
         new_game = input('New game (Y / N): ')
     if new_game == 'Y':
+        pass

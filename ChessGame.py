@@ -89,9 +89,15 @@ class ChessGame():
                     val = 0
                 result += val
         return result
-    
+
     def get_move_log(self):
         return self.move_log
+
+    def move(self, move: str) -> None:
+        """
+        Converts chess notation string into coordinates to move. Calls make_move to make the move
+        move: chess move notation 
+        """
 
     def make_move(self, from_coord: Coord, to_coord: Coord) -> None:
         """
@@ -146,8 +152,6 @@ class ChessGame():
         else:
             self.turn = 'White'
             self.turn_number += 1
-        
-
 
     def get_legal_moves(self, piece: Piece):
         """
