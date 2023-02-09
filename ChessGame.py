@@ -13,6 +13,10 @@ class ChessGame():
         self.board = self._init_new_board()
         self.turn = 'White'
         self.winner = None
+        self.move_log = ''
+        self.turn_number = 1
+        if moves is not None:
+            self._set_starting_position(moves)
 
     def __repr__(self):
         """
@@ -22,13 +26,11 @@ class ChessGame():
         for y in reversed(range(8)):
             for x in range(8):
                 result += str(self.board[x][y])
-                if self.board[x][y] == None:
-                    result += '  '
                 result += ', '
             result += (' \n \n')
         return result + '---------------------------------------------------------------'
     
-    def _init_new_board(self):
+    def _init_new_board(self) -> None:
         """
         Creates a 2D array to represent the chess board in the starting position
         """
@@ -68,6 +70,9 @@ class ChessGame():
 
         return board
     
+    def _set_starting_position(self, moves: str) -> None:
+        pass
+
     def get_material_difference(self):
         """
         Returns the difference in material value between Black and White
@@ -85,7 +90,10 @@ class ChessGame():
                 result += val
         return result
     
-    def make_move(self, from_coord: Coord, to_coord: Coord):
+    def get_move_log(self):
+        return self.move_log
+
+    def make_move(self, from_coord: Coord, to_coord: Coord) -> None:
         """
         Moves one piece from one square to another, if the move is legal
         from_coord: Tuple coordinates
@@ -121,15 +129,25 @@ class ChessGame():
             return
 
         # Move piece
+        takes = False  # True if a piece was captured in this move
+        check = False  # True if next opponent is in check 
         piece.set_position(to_coord)
         self.board[from_coord.x][from_coord.y] = None
+        if self.board[to_coord.x][to_coord.y] is not None:
+            takes = True
         self.board[to_coord.x][to_coord.y] = piece
+
+        # Append move to log
+        self.append_move(piece, from_coord, takes, check)
 
         # Switch turns
         if self.turn == 'White':
             self.turn = 'Black'
         else:
             self.turn = 'White'
+            self.turn_number += 1
+        
+
 
     def get_legal_moves(self, piece: Piece):
         """
@@ -139,6 +157,39 @@ class ChessGame():
         primary_legal_moves = piece.legal_moves(self.board)
         return primary_legal_moves
 
+    def append_move(self, piece: Piece, from_coord: Coord, takes: bool, check: bool) -> None:
+        """
+        Adds move to move_log
+        piece: piece being moved
+        from_coord: where the piece comes from
+        takes: if the piece is taking another
+        check: if the piece creates a check
+        returns: None
+        """
+        symbol = piece.get_symbol()
+        result = ''
+        if self.move_log != '':
+            result += ' '
+        if self.turn == 'White':
+            result += str(self.turn_number) + '. '
+        if symbol != 'P':
+            result += str(piece.get_symbol())
+
+        if takes:
+            if symbol == 'P':
+                result += str(from_coord)[0]
+            result += 'x'
+
+        result += str(piece.get_position())
+
+        if check:
+            result += '+'
+        
+        self.move_log += result
+
+    def in_check(self):
+        pass
+
 
 if __name__ == '__main__':
     game = ChessGame()
@@ -147,12 +198,16 @@ if __name__ == '__main__':
     game.make_move(Coord(4, 1), Coord(4, 3))
     game.make_move(Coord(3, 6), Coord(3, 4))
     game.make_move(Coord(4, 3), Coord(3, 4))
-    print(game)
     game.make_move(Coord(6, 7), Coord(5, 5))
-    print(game)
     game.make_move(Coord(1, 0), Coord(2, 2))
-    print(game)
     game.make_move(Coord(5, 5), Coord(3, 4))
-    print(game)
     game.make_move(Coord(2, 2), Coord(3, 4))
+    game.make_move(Coord(2, 7), Coord(5, 4))
+    game.make_move(Coord(3, 0), Coord(7, 4))
+    game.make_move(Coord(3, 7), Coord(3, 4))
+    game.make_move(Coord(7, 4), Coord(4, 4))
+    game.make_move(Coord(7, 4), Coord(5, 4))
+    game.make_move(Coord(3, 4), Coord(5, 4))
     print(game)
+    print(game.get_move_log())
+    print(game.get_material_difference())
