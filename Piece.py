@@ -3,8 +3,6 @@
 from Coord import Coord
 from Directions import Directions
 
-from Functions import *
-
 directions = Directions()
 
 class Piece:
@@ -21,6 +19,11 @@ class Piece:
     def __repr__(self):
         return self.team[0] + '  ' + self.symbol
     
+    def __eq__(self, other):
+        if isinstance(other, Piece):
+            return self.name == other.name and self.team == other.team and self.position == other.position
+        return False
+
     def _create_symbol(self) -> str:
         if self.name == 'Knight':
             return 'N'

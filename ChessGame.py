@@ -10,9 +10,6 @@ from StartingBoard import StartingBoard
 class InvalidMoveError(Exception):
     pass
 
-class InvalidNotationError(Exception):
-    pass
-
 class ChessGame():
     def __init__(self, moves: str = None):
         self.board = StartingBoard().get_starting_board()
@@ -43,15 +40,20 @@ class ChessGame():
         moves: str representing a series of moves in chess notation
         returns: None, updates self.board
         """
+        nums = '0123456789'
         move_list = moves.split('. ')
         move_list.remove('1')
+        string_move_list = ''
         for i in range(len(move_list)):
-            move_list[i] = move_list[i].split(' ')
-            if len(move_list[i]) == 3:
-                del move_list[i][2]
-        for turn in move_list:
-             for move in turn:
-                  self.move(move)
+            string_move_list += move_list[i] + ' '
+        move_list = string_move_list.split(' ')
+        result = []
+        for move in move_list:
+            if len(move) > 1:
+                if move[0] not in nums:
+                    result.append(move)
+        for move in result:
+            self.move(move)
 
     def _switch_turns(self):
         if self.turn == 'White':
@@ -97,56 +99,20 @@ class ChessGame():
             for piece in row:
                 if piece is not None:
                     piece.update_sees(self.board)
-    
-    def convert_chess_notation(self, square: str) -> Coord:
-        """
-        square: string representing chess notation
-        returns: Coord representing location on board
-        """
-        letters = 'abcdefgh'
-        x, y = square[0], int(square[1]) - 1
-        if len(square) != 2 or x not in letters or y < 0 or y > 7:
-            raise InvalidNotationError
-        return Coord(letters.index(x), y)
 
     # --------------------------------- Move & Helper Functions ---------------------------------
-    def move(self, move: str) -> None:
+    def move(self, notation: str) -> None:
         """
         Make a move on the chess board using chess notation
-        move: move in chess notation ex. e4, Nf3, Ke2, Bxf6, O-O
+        notation: move in chess notation ex. e4, Nf3, Ke2, Bxf6, O-O
         """
-        if len(move) == 0:
+        if len(notation) == 0:
             return
-        # Pawn move
-        if len(move) == 2 or not move[0].isupper():
-            symbol = 'P'
-        # Castles
-        elif move[0] == 'O':
-            try:
-                if len(move) == 3:
-                    self.castle('short')
-                else:
-                    self.castle('long')
-                return
-            except InvalidMoveError:
-                print('Exception made: {} cannot Castle in the current position'.format(self.turn))
-        # Standard piece move
+        move = Move(notation, self.turn, self.board)
+        if move.castle:
+            self.castle(move.castle)
         else:
-            symbol = move[0]
-        to_coord = self.convert_chess_notation(move[-2:])
-        # Find piece
-        for row in self.board:
-            for piece in row:
-                if piece is not None:
-                    if piece.get_symbol() == symbol and piece.get_team() == self.turn:
-                        if to_coord in piece.get_sees():
-                            from_coord = piece.get_position()
-                            try:
-                                self._move_helper(from_coord, to_coord)
-                            except InvalidMoveError:
-                                print('Exception made, Invalid Move: {}'.format(move))
-                            return
-        raise InvalidMoveError
+            self._move_helper(move.from_coord, move.to_coord)
 
     def _move_helper(self, from_coord: Coord, to_coord: Coord) -> None:
         """
@@ -155,24 +121,7 @@ class ChessGame():
         to_coord: Tuple coordinates
         return: None, alters chess board if move is legal, raises error otherwise
         """
-    
         piece: Piece = self.board[from_coord.x][from_coord.y]
-
-        # Check if piece on from_coord
-        try:
-            if piece == None:
-                raise InvalidMoveError
-        except InvalidMoveError:
-            print("Exception occured: No Piece on {}".format(from_coord))
-            return
-
-        # Check if piece belongs to player whose turn it is
-        try:
-            if piece.get_team() != self.turn:
-                raise InvalidMoveError
-        except InvalidMoveError:
-            print("Exception occured: Not the current player's turn")
-            return
         
         # Check if it is a legal move
         legal_moves = self._get_legal_moves(piece)
