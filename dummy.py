@@ -1,9 +1,7 @@
-directions = [2, -2, 1, -1]
-permutations = []
+def loop(x):
+    for i in range(4, x):
+        print(i)
 
-for i in range(len(directions)):
-    for j in range(len(directions)):
-       if abs(directions[i]) != abs(directions[j]):
-            permutations.append((directions[i], directions[j]))
 
-print(len(permutations), permutations)
+loop(0)
+loop(7)

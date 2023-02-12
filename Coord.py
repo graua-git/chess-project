@@ -5,7 +5,7 @@ class Coord():
         self.x = x
         self.y = y
         letters = 'abcdefgh'
-        if x < 8:
+        if x < 8 and x >= 0:
             self.chess = letters[x] + str(y + 1)
         else:
             self.chess = '-' + str(y + 1)
