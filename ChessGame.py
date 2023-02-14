@@ -1,24 +1,21 @@
 # Definition for a Chess Game class
 
-from Move import Move
+from Move import *
 from Piece import Piece
 from Coord import Coord
 from StartingBoard import StartingBoard
 
 #from Functions import *
 
-class InvalidMoveError(Exception):
-    pass
-
 class ChessGame():
     def __init__(self, moves: str = None):
         self.board = StartingBoard().get_starting_board()
         self.turn = 'White'
         self.winner = None
-        self.move_log = ''
+        self.move_log = []
         self.turn_number = 1
         self.update_piece_visibility()
-        if moves is not None or moves != '':
+        if moves is not None and moves != '':
             self._set_starting_position(moves)
 
     def __repr__(self):
@@ -47,13 +44,15 @@ class ChessGame():
         for i in range(len(move_list)):
             string_move_list += move_list[i] + ' '
         move_list = string_move_list.split(' ')
-        result = []
+        # Filter out empty strings
+        move_list = [move for move in move_list if len(move) > 1]
+        # Filter out turn number notation
+        move_list = [move for move in move_list if move[0] not in nums]
         for move in move_list:
-            if len(move) > 1:
-                if move[0] not in nums:
-                    result.append(move)
-        for move in result:
-            self.move(move)
+            try:
+                self.move(move)
+            except InvalidMoveError:
+                return
 
     def _switch_turns(self):
         if self.turn == 'White':
@@ -79,8 +78,17 @@ class ChessGame():
                 result += val
         return result
 
-    def get_move_log(self):
-        return self.move_log
+    def get_move_log(self) -> str:
+        """
+        Returns the list of moves in string format
+        """
+        result = ''
+        for i, move in enumerate(self.move_log):
+            if i % 2 == 0:
+                turn_number = str(int(i / 2 + 1))
+                result += turn_number + '. '
+            result += str(move) + ' '
+        return result
     
     def _get_legal_moves(self, piece: Piece):
         """
@@ -109,47 +117,42 @@ class ChessGame():
         if len(notation) == 0:
             return
         move = Move(notation, self.turn, self.board)
-        if move.castle:
-            self.castle(move.castle)
+        if move.properties['castle']:
+            self.castle(move)
         else:
-            self._move_helper(move.from_coord, move.to_coord)
+            self._move_helper(move)
 
-    def _move_helper(self, from_coord: Coord, to_coord: Coord) -> None:
+    def _move_helper(self, move: Move) -> None:
         """
         Moves one piece from one square to another, if the move is legal
         from_coord: Tuple coordinates
         to_coord: Tuple coordinates
         return: None, alters chess board if move is legal, raises error otherwise
         """
+        from_coord, to_coord =  move.from_coord, move.to_coord
         piece: Piece = self.board[from_coord.x][from_coord.y]
-        
-        # Check if it is a legal move
-        legal_moves = self._get_legal_moves(piece)
-        try:
-            if to_coord not in legal_moves:
-                raise InvalidMoveError
-        except InvalidMoveError:
-            print("Exception occured: Illegal move from {} to {}".format(piece, to_coord))
-            return
 
-        # Can start to make move
-        takes = False  # True if a piece was captured in this move
         if self.board[to_coord.x][to_coord.y] is not None:
-            takes = True
+            move.properties['takes'] = True
         check = False  # True if next opponent is in check
 
         # Move piece
         self._move_piece(piece, to_coord)
 
+        # Promote if necessary
+        if move.properties['promotion']:
+            symbol = move.promotion_piece
+            piece._promote(symbol)
+
         # Append move to log
-        self.append_move(piece, from_coord, takes, check, None)
+        self.move_log.append(move)
 
         # Update piece visibility
         self.update_piece_visibility()
 
         # Update ability to castle, if necessary
         if piece.get_symbol() == 'K' or piece.get_symbol() == 'R':
-            piece.set_castle() == False
+            piece.set_castle(False)
 
         # Switch turns
         self._switch_turns()
@@ -166,30 +169,28 @@ class ChessGame():
         self.board[to_coord.x][to_coord.y] = piece
         return
 
-    def castle(self, side):
+    def castle(self, move: Move):
         """
         Castles king either to king side or queen side
         King moves two spaces over left or right and rook switches sides to protect the King
         The king cannot castle out of, into, or through check
-        side: 'short' for king side castle, 'long' for queen side castle
+        move: move, castle either 'short' for king side castle, 'long' for queen side castle
         """
         # Get king and correct rook
         if self.turn == 'White':
             y = 0
         else:
             y = 7
-        if side == 'short':
+        if move.get_castle_side() == 'short':
             rook_x = 7
             direction = 1
             rook_distance = 2
-            notation = 'O-O'
             check_visiblity_squares = [4, 5, 6]
             check_empty_squares = [5, 6]
         else:
             rook_x = 0
             direction = -1
             rook_distance = 3
-            notation = 'O-O-O'
             check_visiblity_squares = [4, 3, 2]
             check_empty_squares = [3, 2, 1]
         king: Piece = self.board[4][y]
@@ -221,7 +222,7 @@ class ChessGame():
 
         check = False
         # Append move to log
-        self.append_move(king, None, False, check, notation)
+        self.move_log.append(move)
 
         # Update piece visibility
         self.update_piece_visibility()
@@ -243,51 +244,17 @@ class ChessGame():
                             return True
         return False
 
-    def append_move(self, piece: Piece, from_coord: Coord, takes: bool, check: bool, castle: str) -> None:
-        """
-        Adds move to move_log
-        piece: piece being moved
-        from_coord: where the piece comes from
-        takes: if the piece is taking another
-        check: if the piece creates a check
-        castle: 'short' or 'long' depending on the side of castle, None if False
-        returns: None
-        """
-        symbol = piece.get_symbol()
-        result = ''
-        # Set new move if necessary
-        if self.move_log != '':
-            result += ' '
-        if self.turn == 'White':
-            result += str(self.turn_number) + '. '
-        # Use castle notation if necessary
-        if castle:
-            result += castle
-        # Create move notation
-        else:
-            if symbol != 'P':
-                result += str(piece.get_symbol())
-            
-
-            if takes:
-                if symbol == 'P':
-                    result += str(from_coord)[0]
-                result += 'x'
-
-            result += str(piece.get_position())
-
-        if check:
-            result += '+'
-        
-        self.move_log += result
-
     def in_check(self):
         pass
 
 
 if __name__ == '__main__':
-    starting_pos = '1. e4 e5 2. Nf3 Nc6 3. d3 d6 4. Be3 Be7 5. Nc3 Nf6 6. Qd2 O-O 7. O-O-O d5 \
-                    8. Nxd5 Nxd5 9. exd5 Nb4 10. d6 Bxd6 11. a3 Nc6 12. b4 h5 13. Nxe5 Bxe5 14. Qc3 Bxc3'
+    starting_pos = '1. e4 c6 2. e5 d5 3. exd6 exd6 4. Qe2+ Qe7 5. Qxe7+ Bxe7 6. Nf3 Bg4 7. Be2 Nf6 8. d3 h6 9. O-O O-O 10. h3 Bh5 \
+                        11. Nc3 Re8 12. Be3 c5 13. g4 Bg6 14. d4 cxd4 15. Nxd4 Nc6 16. Nxc6 bxc6 17. Rac1 Rab8 18. b3 d5 19. Bxa7 Ra8 20. Bd4 Ne4 \
+                        21. Nxe4 Bxe4 22. a4 Ba3 23. Ra1 Bxc2 24. Rxa3 Rxe2 25. Ra2 Rae8 26. b4 Bb3 27. Rxe2 Rxe2 28. a5 Bc4 29. Bc5 Kh7 30. Kg2 Kg6 \
+                        31. Kf3 Kg5 32. Rc1 Kh4 33. Rh1 d4 34. Be7+ g5 35. Bc5 Bd5+ 36. Kxe2 Bxh1 37. Bxd4 Kxh3 38. f3 Kg3 39. a6 Bxf3+ 40. Kd3 c5 \
+                        41. Bxc5 Kxg4 42. b5 h5 43. b6 h4 44. a7 h3 45. b7 Bxb7 46. Bg1 Kg3 47. Ke2 Kg2 48. Bc5 h2 49. Bd6 h1=Q 50. Kd3 Qf1+ \
+                        51. Kd4 Qf6+ 52. Kc5 Qf5+ 53. Kb6 Qe6 54. Kxb7 Qd7+ 55. Bc7 Qe7 56. a8=Q Qe4+ 57. Kc8 Qxa8+'
     game = ChessGame(starting_pos)
     print(game)
     print(game.get_move_log())
