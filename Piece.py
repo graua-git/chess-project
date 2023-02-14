@@ -109,12 +109,13 @@ class Piece:
                     continue
             # If straight, don't add unless space is empty
             else:
-                if board[next_pos.x][next_pos.y] is not None:
+                if board[next_pos.x][next_pos.y]:
                     continue
                 # If next square is empty, add move 2 forward if piece hasn't move yet
-                elif board[next_pos.x][next_pos.y + direction] is None:
-                    if (self.position.y == 1 and direction == 1) or (self.position.y == 6 and direction == -1):
-                        self.sees.append(Coord(self.position.x, self.position.y + 2 * direction))
+                if next_pos.y < 7:
+                    if board[next_pos.x][next_pos.y + direction] is None:
+                        if (self.position.y == 1 and direction == 1) or (self.position.y == 6 and direction == -1):
+                            self.sees.append(Coord(self.position.x, self.position.y + 2 * direction))
             self.sees.append(next_pos)
 
     # -------------------------------------- Knight --------------------------------------
@@ -217,6 +218,28 @@ class Piece:
                     if board[next_pos.x][next_pos.y].get_team() == self.team:
                         continue
                 self.sees.append(next_pos)
+
+    def _promote(self, symbol: str):
+        """
+        Promotes pawn to piece given as a symbol Q R B N
+        piece: pawn to be promoted
+        symbol: symbol representing new piece
+        """
+        symbol_dict = {
+            'Q': ('Queen', 9),
+            'R': ('Rook', 5),
+            'B': ('Bishop', 3),
+            'N': ('Knight', 3)
+        }
+        # Verify pawn is ready to promote
+        if self.get_name() != 'Pawn':
+            return
+        if self.get_position().y == 0 or self.get_position().y == 7:
+            new_piece = symbol_dict[symbol]
+            self.symbol = symbol
+            self.name = new_piece[0]
+            self.value = new_piece[1]
+        return
 
 
 if __name__ == '__main__':

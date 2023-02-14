@@ -1,0 +1,15 @@
+Pawn:
+    e4
+    exd4+
+    e8=Q#
+    exd8=R
+Rook:
+    Rc3
+    Rbd3
+    R1f3
+    Rfxc6
+King:
+    O-O
+    O-O-O
+    Kc3
+    Kxc5
