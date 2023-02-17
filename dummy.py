@@ -1,4 +1,6 @@
-from Piece import *
+from Board import *
+from Move import *
 
-p = Queen('W', Coord(0, 0))
-print(p._name)
+b = Board()
+m = Move(b, (Coord(0, 7), Coord(4, 3)))
+print(m)

@@ -12,6 +12,9 @@ class Coord:
     def __repr__(self):
         return self._notation
     
+    def __iter__(self):
+        return iter((self._x, self._y))
+    
     def __eq__(self, other):
         if isinstance(other, Coord):
             return self._notation == other._notation
@@ -20,15 +23,28 @@ class Coord:
         return False
     
     def x(self) -> int:
+        """
+        return: int, x coord
+        """
         return self._x
     
     def y(self) -> int:
+        """
+        return: int, y coord
+        """
         return self._y
     
     def notation(self) -> str:
+        """
+        return: str, chess coordinate notation
+        """
         return self._notation
     
     def _set_notation(self) -> str:
+        """
+        Creates chess square notation based on x, y coordinates 
+        return: str, notation
+        """
         letters = 'abcdefgh'
         if self._x > 7 or self._x < 0 or self._y > 7 or self._y < 0:
             raise InvalidCoordError
