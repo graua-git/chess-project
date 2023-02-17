@@ -34,6 +34,30 @@ class Board:
     def board_state(self):
         return self._board_state
 
+    def turn(self):
+        return self._turn
+    
+    def switch_turns(self):
+        """
+        Switches player's turn
+        """
+        if self._turn == 'W':
+            self._turn = 'B'
+        else:
+            self._turn = 'W'
+
+    def move_piece(self, from_coord: Coord, to_coord: Coord):
+        """
+        moves piece from from_coord to to_coord
+        from_coord: Coordinate on chess board to represent starting position
+        to_coord: Coordinate on chess board to represent ending position
+        """
+        piece = self._board_state[from_coord.x()][from_coord.y()]
+        piece.set_position(to_coord)
+        self._board_state[from_coord.x()][from_coord.y()] = None
+        self._board_state[to_coord.x()][to_coord.y()] = piece
+        return
+
     def _starting_board(self) -> list:
         """
         Creates a starting chess board

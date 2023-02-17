@@ -8,6 +8,7 @@ class ChessGame:
         """
         self._board = Board()
         self._move_log = MoveLog(starting_moves)
+        self._turn = 'W'
         self.winner = None
 
     def __repr__(self):
@@ -18,15 +19,22 @@ class ChessGame:
         Makes move, updating board and move log
         """
         # Verify move
-        curr_move = Move(self._board.board_state(), move)
+        turn = self._board.turn()
+        try:
+            curr_move = Move(self._board, turn, move)
+        except InvalidMoveError:
+            return
 
-        # Move pieces
-
-        
         self._move_log.append(curr_move)
-    
+        self._board = curr_move.board_state()
+        self._board.switch_turns()
 
 if __name__ == '__main__':
     game = ChessGame()
-    m = (Coord(0, 7), Coord(4, 3))
-    game.move(m)
+    game.move('e4')
+    game.move('e5')
+    game.move('Nc3')
+    game.move('Nc6')
+    game.move('Bc4')
+    game.move('Bc5')
+    print(game)

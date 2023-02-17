@@ -40,20 +40,26 @@ class Piece:
         """
         return self._symbol
     
-    def sees(self) -> list[Coord]:
+    def sees(self, board: list) -> list[Coord]:
         """
         return: list of Coords piece can see based on its movement
         """
-        self.update_sees()
+        self.update_sees(board)
         return self._sees
+
+    def set_position(self, position: Coord) -> None:
+        """
+        Set's piece's position
+        """
+        self._pos = position
     
     def update_sees(self, board: list) -> None:
         """
         Updates what squares the piece can see
         """
-        self._sees = eval(self._ + self._move_type + '_moves(self, ' + self.directions + ', board)')  
+        self._sees = eval('self._' + str(self._move_type) + '_moves(self._directions, board)')  
     
-    def _continuous_moves(self, directions: list, board: list) -> None:
+    def _continuous_moves(self, directions: list, board: list) -> list:
         """
         Function to get moves for bishop, rook, or queen based on which directions they can move in.
         These pieces can move continuously in their given directions
@@ -66,11 +72,11 @@ class Piece:
             curr_pos = self._pos
             # In bounds
             while True:
-                next_pos = Coord(curr_pos.x + direction[0], curr_pos.y + direction[1])
-                x, y = next_pos
-                # Out of bounds
-                if x < 0 or x > 7 or y < 0 or y > 7:
+                try:
+                    next_pos = Coord(curr_pos.x() + direction[0], curr_pos.y() + direction[1])
+                except InvalidCoordError:
                     break
+                x, y = next_pos
                 piece = board[x][y]
                 # Not occupied by piece
                 if piece is None:
@@ -86,7 +92,7 @@ class Piece:
                     break
         return result
 
-    def _single_moves(self, directions: list, board: list) -> None:
+    def _single_moves(self, directions: list, board: list) -> list:
         """
         Function to get moves for knight or king based on which directions they can move in.
         These pieces can only move one square in their given direction 
@@ -96,16 +102,17 @@ class Piece:
         """
         result = []
         for direction in directions:
-            next_pos = Coord(self._pos.x() + direction[0], self._pos.y() + direction[1])
+            try:
+                next_pos = Coord(self._pos.x() + direction[0], self._pos.y() + direction[1])
+            except InvalidCoordError:
+                continue
             x, y = next_pos
-            # In bounds
-            if x >= 0 and x <= 7 and y >= 0 and y <= 7:
-                # Not occupied by own piece
-                if board[x][y] is not None:
-                    if board[x][y].team() == self._team:
-                        continue
-                result.append(next_pos)
-        return
+            # Not occupied by own piece
+            if board[x][y] is not None:
+                if board[x][y].team() == self._team:
+                    continue
+            result.append(next_pos)
+        return result
 
 
 class Pawn(Piece):
@@ -113,6 +120,48 @@ class Pawn(Piece):
         Piece.__init__(self, team, position)
         self._value = 1
         self.en_passant = False
+        self._directions = []
+        self._move_type = 'pawn'
+    
+    def _pawn_moves(self, directions: list, board: list) -> list:
+        """
+        Gets first set of legal pawn moves based on piece's movement
+        A pawn can move forward one space (two for first move) and can only capture diagonally
+        board: 2D list representing current chess board
+        returns: None, updates variable self.sees
+        """
+        result = []
+        # Set direction pawn is moving
+        if self._team == 'W':
+            direction = 1  # Direction pawn is moving
+        else:
+            direction = -1
+
+        # If pawn hasn't moved
+        
+        for i in range(-1, 2):
+            try:
+                next_pos = Coord(self._pos.x() + i, self._pos.y() + direction)
+            except InvalidCoordError:
+                continue
+            x, y = next_pos
+            # If diagonal, don't add unless there is an oposing piece
+            if i != 0:
+                if board[x][y] is None:
+                    continue
+                elif board[x][y].team() == self.team:
+                    continue
+            # If straight, don't add unless space is empty
+            else:
+                if board[x][y]:
+                    continue
+                # If next square is empty, add move 2 forward if piece hasn't move yet
+                if y < 7:
+                    if board[x][y + direction] is None:
+                        if (self._pos.y() == 1 and direction == 1) or (self._pos.y() == 6 and direction == -1):
+                            result.append(Coord(self._pos.x(), self._pos.y() + 2 * direction))
+            result.append(next_pos)
+        return result
 
 
 class Knight(Piece):

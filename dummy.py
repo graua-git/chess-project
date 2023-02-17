@@ -1,6 +1,4 @@
 from Board import *
 from Move import *
 
-b = Board()
-m = Move(b, (Coord(0, 7), Coord(4, 3)))
-print(m)
+'self._' + str(self._move_type) + '_moves(self, self._directions, board)'
