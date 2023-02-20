@@ -2,62 +2,67 @@ from Coord import *
 
 class Piece:
     def __init__(self, team: str, position: Coord):
-        self._team = team
-        self._pos = position
-        self._value = 0
-        self._name = self.__class__.__name__
-        self._symbol = self.__class__.__name__[0]
-        self._sees = []
+        self.team = team
+        self.pos = position
+        self.value = 0
+        self.name = self.__class__.__name__
+        self.symbol = self.__class__.__name__[0]
+        self.sees = []
 
     def __repr__(self):
-        return self._team + '  ' + self._symbol
+        return self.team + '  ' + self.symbol
     
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self._team == other._team
-    
-    def team(self) -> str:
+            return self.team == other.team
+    # ------------------------------------------- Getters -------------------------------------------
+    def get_team(self) -> str:
         """
         return: str, team of the piece
         """
-        return self._team
+        return self.team
 
-    def position(self) -> Coord:
+    def get_position(self) -> Coord:
         """
         return: Coord, position of the piece
         """
-        return self._pos
+        return self.pos
 
-    def value(self) -> int:
+    def get_value(self) -> int:
         """
         return: int, material value of the piece
         """
-        return self._value
+        return self.value
     
-    def symbol(self) -> str:
+    def get_symbol(self) -> str:
         """
         return: str, 1 letter symbol representing piece P N B R Q or K
         """
-        return self._symbol
+        return self.symbol
     
-    def sees(self, board: list) -> list[Coord]:
+    def get_sees(self, board: list, turn_number: int) -> list[Coord]:
         """
         return: list of Coords piece can see based on its movement
         """
-        self.update_sees(board)
-        return self._sees
+        self.update_sees(board, turn_number)
+        return self.sees
 
+    # ------------------------------------------- Setters -------------------------------------------
     def set_position(self, position: Coord) -> None:
         """
+        position: Coord, new position of piece
         Set's piece's position
         """
-        self._pos = position
+        self.pos = position
     
-    def update_sees(self, board: list) -> None:
+    def update_sees(self, board: list, turn_num: int) -> None:
         """
         Updates what squares the piece can see
         """
-        self._sees = eval('self._' + str(self._move_type) + '_moves(self._directions, board)')  
+        if self.move_type == 'pawn':
+            self.sees = self._pawn_moves(self.directions, board, turn_num)
+        else:
+            self.sees = eval('self._' + str(self.move_type) + '_moves(self.directions, board)')  
     
     def _continuous_moves(self, directions: list, board: list) -> list:
         """
@@ -69,7 +74,7 @@ class Piece:
         """
         result = []
         for direction in directions:
-            curr_pos = self._pos
+            curr_pos = self.pos
             # In bounds
             while True:
                 try:
@@ -84,7 +89,7 @@ class Piece:
                     curr_pos = next_pos 
                     continue
                 # Square is blocked
-                if piece.team() == self._team:
+                if piece.get_team() == self.team:
                     break
                 # Square can be captured
                 else:
@@ -103,13 +108,13 @@ class Piece:
         result = []
         for direction in directions:
             try:
-                next_pos = Coord(self._pos.x() + direction[0], self._pos.y() + direction[1])
+                next_pos = Coord(self.pos.x() + direction[0], self.pos.y() + direction[1])
             except InvalidCoordError:
                 continue
             x, y = next_pos
             # Not occupied by own piece
             if board[x][y] is not None:
-                if board[x][y].team() == self._team:
+                if board[x][y].get_team() == self.team:
                     continue
             result.append(next_pos)
         return result
@@ -118,12 +123,26 @@ class Piece:
 class Pawn(Piece):
     def __init__(self, team: str, position: Coord):
         Piece.__init__(self, team, position)
-        self._value = 1
-        self.en_passant = False
-        self._directions = []
-        self._move_type = 'pawn'
+        self.value = 1
+        self.en_passant_turn = 0
+        self.directions = [-1, 0, 1]
+        self.move_type = 'pawn'
     
-    def _pawn_moves(self, directions: list, board: list) -> list:
+    def get_en_passant(self) -> int:
+        """
+        Returns turn number that the pawn moved two squares for en passant
+        """
+        return self.en_passant_turn
+    
+    def set_en_passant(self, turn_number: int) -> None:
+        """
+        Set's turn that pawn can be taken by en passant
+        """
+        self.en_passant_turn = turn_number
+        if self.team == 'B':
+            self.en_passant_turn += 1
+
+    def _pawn_moves(self, directions: list, board: list, turn_number: int) -> list:
         """
         Gets first set of legal pawn moves based on piece's movement
         A pawn can move forward one space (two for first move) and can only capture diagonally
@@ -132,24 +151,23 @@ class Pawn(Piece):
         """
         result = []
         # Set direction pawn is moving
-        if self._team == 'W':
-            direction = 1  # Direction pawn is moving
+        if self.team == 'W':
+            forward = 1  # Direction pawn is moving
         else:
-            direction = -1
-
-        # If pawn hasn't moved
+            forward = -1
         
-        for i in range(-1, 2):
+        for direction in directions:
             try:
-                next_pos = Coord(self._pos.x() + i, self._pos.y() + direction)
+                next_pos = Coord(self.pos.x() + direction, self.pos.y() + forward)
             except InvalidCoordError:
                 continue
             x, y = next_pos
             # If diagonal, don't add unless there is an oposing piece
-            if i != 0:
+            if direction != 0:
                 if board[x][y] is None:
-                    continue
-                elif board[x][y].team() == self.team:
+                    if not self.check_en_passant(board, next_pos, forward, turn_number):
+                        continue
+                elif board[x][y].get_team() == self.team:
                     continue
             # If straight, don't add unless space is empty
             else:
@@ -157,51 +175,116 @@ class Pawn(Piece):
                     continue
                 # If next square is empty, add move 2 forward if piece hasn't move yet
                 if y < 7:
-                    if board[x][y + direction] is None:
-                        if (self._pos.y() == 1 and direction == 1) or (self._pos.y() == 6 and direction == -1):
-                            result.append(Coord(self._pos.x(), self._pos.y() + 2 * direction))
+                    if board[x][y + forward] is None:
+                        if (self.pos.y() == 1 and forward == 1) or (self.pos.y() == 6 and forward == -1):
+                            result.append(Coord(self.pos.x(), self.pos.y() + 2 * forward))
             result.append(next_pos)
         return result
+        
+    def check_en_passant(self, board: list, next_pos: Coord, direction: int, curr_turn: int) -> bool:
+        """
+        board: 2D list representing current chess board
+        next_pos: coordinate pawn would land on if takes
+        direction: direction pawn is moving
+        return: True if pawn can be en passant, false otherwise
+        """
+        x, y = next_pos
+        y -= direction
+        pawn = board[x][y]
+        if not pawn:
+            return False
+        if self.team == pawn.get_team():
+            return False
+        if not isinstance(pawn, Pawn):
+            return False
+        
+        return curr_turn == pawn.get_en_passant()
 
 
 class Knight(Piece):
     def __init__(self, team: str, position: Coord):
         Piece.__init__(self, team, position)
-        self._value = 3
-        self._symbol = 'N'
-        self._directions = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
-        self._move_type = 'single'
+        self.value = 3
+        self.symbol = 'N'
+        self.directions = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
+        self.move_type = 'single'
 
 
 class Bishop(Piece):
     def __init__(self, team: str, position: Coord):
         Piece.__init__(self, team, position)
-        self._value = 3
-        self._directions = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
-        self._move_type = 'continuous'
+        self.value = 3
+        self.directions = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
+        self.move_type = 'continuous'
 
 
 class Rook(Piece):
     def __init__(self, team: str, position: Coord):
         Piece.__init__(self, team, position)
-        self._value = 5
-        self._castle = True
-        self._directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
-        self._move_type = 'continuous'
+        self.value = 5
+        self.castle = True
+        self.directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
+        self.move_type = 'continuous'
 
 
 class Queen(Piece):
     def __init__(self, team: str, position: Coord):
         Piece.__init__(self, team, position)
-        self._value = 9
-        self._directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        self._move_type = 'continuous'
+        self.value = 9
+        self.directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        self.move_type = 'continuous'
 
 
 class King(Piece):
     def __init__(self, team: str, position: Coord):
         Piece.__init__(self, team, position)
-        self._value = 100
-        self._castle = True
-        self._directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        self._move_type = 'single'
+        self.value = 100
+        self.castle = True
+        self.directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        self.move_type = 'king'
+
+    def _king_moves(self, directions: list, board: list) -> list:
+        """
+        Gets first set of legal pawn moves based on piece's movement
+        A king can move a single space in any direction
+        A king can also castle, moving 2 spaces towards a rook, having the rook come over it
+        board: 2D list representing current chess board
+        returns: None, updates variable self.sees
+        """
+        result = self._single_moves(directions, board)
+        y = 0 if self.team == 'W' else 7
+        # Add castle possibility
+        if self.castle:
+            if self.can_castle('short', board, y):
+                result.append(Coord(6, y))
+            if self.can_castle('long', board, y):
+                result.append(Coord(2, y))
+
+        return result
+    
+    def can_castle(self, side: str, board, y: int) -> bool:
+        """
+        side: 'short' or 'long' for which side to castle
+        board: 2D list representing current chess board
+        y: y-coord of the king
+        return: True if king can castle to side, false other wise
+        """
+        if side == 'short':
+            x_vals = [5, 6]
+            rook: Rook = board[7][y]
+        if side == 'long':
+            x_vals = [3, 2, 1]
+            rook: Rook = board[0][y]
+        
+        # Check rook
+        if not isinstance(rook, Rook):
+            return False
+        if not rook.castle:
+            return False
+        
+        # Check squares for empty and vision
+        for x in x_vals:
+            if board[x][y]:
+                return False
+            
+        return True

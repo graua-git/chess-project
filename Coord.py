@@ -21,7 +21,7 @@ class Coord:
         elif isinstance(other, str):
             return self._notation == other
         return False
-    
+
     def x(self) -> int:
         """
         return: int, x coord
