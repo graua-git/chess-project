@@ -1,195 +1,91 @@
-# Definition for Piece class
-
-from Coord import Coord
-from Directions import Directions
-
-directions = Directions()
+from Coord import *
 
 class Piece:
-    def __init__(self, name: str, team: str, value: int, position: Coord):
-        self.name = name
-        self.symbol = self._create_symbol()
+    def __init__(self, team: str, position: Coord):
         self.team = team
-        self.value = value
-        self.position = position
-        if self.symbol == 'K' or self.symbol == 'R':
-            self.castle = True
+        self.pos = position
+        self.value = 0
+        self.name = self.__class__.__name__
+        self.symbol = self.__class__.__name__[0]
         self.sees = []
 
     def __repr__(self):
-        return self.team[0] + '  ' + self.symbol
+        return self.team + '  ' + self.symbol
     
     def __eq__(self, other):
-        if isinstance(other, Piece):
-            return self.name == other.name and self.team == other.team and self.position == other.position
-        return False
-
-    def _create_symbol(self) -> str:
-        if self.name == 'Knight':
-            return 'N'
-        else:
-            return self.name[0]
-
-    # ----------------------------------- Getters and Setters -----------------------------------
-    def get_name(self):
-        return self.name
-    
-    def get_symbol(self):
-        return self.symbol
-
-    def get_team(self):
+        if isinstance(other, self.__class__):
+            return self.team == other.team
+    # ------------------------------------------- Getters -------------------------------------------
+    def get_team(self) -> str:
+        """
+        return: str, team of the piece
+        """
         return self.team
 
-    def get_value(self):
+    def get_position(self) -> Coord:
+        """
+        return: Coord, position of the piece
+        """
+        return self.pos
+
+    def get_value(self) -> int:
+        """
+        return: int, material value of the piece
+        """
         return self.value
     
-    def get_position(self):
-        return self.position
+    def get_symbol(self) -> str:
+        """
+        return: str, 1 letter symbol representing piece P N B R Q or K
+        """
+        return self.symbol
     
-    def get_castle(self):
-        return self.castle
-    
-    def get_sees(self):
+    def get_sees(self, board: list, turn_number: int) -> list[Coord]:
+        """
+        return: list of Coords piece can see based on its movement
+        """
+        self.update_sees(board, turn_number)
         return self.sees
-    
-    def set_position(self, position):
-        """
-        Sets new position for piece
-        position: Tuple representing list coordinates
-        """
-        self.position = position
 
-    def set_castle(self, castle):
-        self.castle = castle
-
-    # ------------------------------------- Get Legal Moves -------------------------------------
-    def legal_moves(self, board: list) -> list:
+    # ------------------------------------------- Setters -------------------------------------------
+    def set_position(self, position: Coord) -> None:
         """
-        Gets first set of legal moves based on piece's movement
-        board: 2D list representing current chess board
-        returns: preliminary list of legal moves piece can make
+        position: Coord, new position of piece
+        Set's piece's position
         """
-        self.update_sees(board)
-        return self.sees
+        self.pos = position
     
-    def update_sees(self, board: list) -> None:
+    def update_sees(self, board: list, turn_num: int) -> None:
         """
-        Updates self.sees with a list of legal moves based on a piece's movement
-        returns: None, updates variable self.sees
+        Updates what squares the piece can see
         """
-        eval('self._' + self.name.lower() + '_sees(board)')
-    
-    # -------------------------------------- Pawn --------------------------------------
-    def _pawn_sees(self, board: list) -> list:
-        """
-        Gets first set of legal pawn moves based on piece's movement
-        A pawn can move forward one space (two for first move) and can only capture diagonally
-        board: 2D list representing current chess board
-        returns: None, updates variable self.sees
-        """
-        self.sees = []
-        # Set direction pawn is moving
-        if self.team == 'White':
-            direction = 1  # Direction pawn is moving
+        if self.move_type == 'pawn':
+            self.sees = self._pawn_moves(self.directions, board, turn_num)
         else:
-            direction = -1
-
-        # If pawn hasn't moved
-        
-        for i in range(-1, 2):
-            next_pos = Coord(self.position.x + i, self.position.y + direction)
-            # Don't add if pawn would go out of bounds
-            if next_pos.x < 0 or next_pos.x > 7:
-                continue
-            # If diagonal, don't add unless there is an oposing piece
-            if i != 0:
-                if board[next_pos.x][next_pos.y] is None:
-                    continue
-                elif board[next_pos.x][next_pos.y].get_team() == self.team:
-                    continue
-            # If straight, don't add unless space is empty
-            else:
-                if board[next_pos.x][next_pos.y]:
-                    continue
-                # If next square is empty, add move 2 forward if piece hasn't move yet
-                if next_pos.y < 7:
-                    if board[next_pos.x][next_pos.y + direction] is None:
-                        if (self.position.y == 1 and direction == 1) or (self.position.y == 6 and direction == -1):
-                            self.sees.append(Coord(self.position.x, self.position.y + 2 * direction))
-            self.sees.append(next_pos)
-
-    # -------------------------------------- Knight --------------------------------------
-    def _knight_sees(self, board: list) -> None:
-        """
-        Gets first set of legal knight moves based on piece's movement
-        A knight can move 2 in a direction, 1 in another, in any direction, and can jump over other pieces
-        board: 2D list representing current chess board
-        returns: None, updates variable self.sees
-        """
-        self._single_moves(directions.knight, board)
-
-    # -------------------------------------- Bishop --------------------------------------
-    def _bishop_sees(self, board: list) -> None:
-        """
-        Gets first set of legal bishop moves based on piece's movement
-        A bishop can move diagonally in all 4 directions
-        board: 2D list representing current chess board
-        returns: None, updates variable self.sees
-        """
-        self._continuous_moves(directions.bishop, board)
-
-    # -------------------------------------- Rook --------------------------------------
-    def _rook_sees(self, board: list) -> None:
-        """
-        Gets first set of legal rook moves based on piece's movement
-        A rook can move horizontally or vertically in any direction
-        board: 2D list representing current chess board
-        returns: None, updates variable self.sees
-        """
-        self._continuous_moves(directions.rook, board)
+            self.sees = eval('self._' + str(self.move_type) + '_moves(self.directions, board)')  
     
-    # -------------------------------------- Queen --------------------------------------
-    def _queen_sees(self, board: list) -> None:
-        """
-        Gets first set of legal queen moves based on piece's movement
-        A queen can move horizontally, vertically, or diagonally in any direction
-        board: 2D list representing current chess board
-        returns: None, updates variable self.sees
-        """
-        self._continuous_moves(directions.queen, board)
-    
-    # -------------------------------------- King --------------------------------------
-    def _king_sees(self, board: list) -> None:
-        """
-        Gets first set of legal king moves based on piece's movement
-        A king can move one square away in any direction
-        board: 2D list representing current chess board
-        returns: None, updates variable self.sees
-        """
-        self._single_moves(directions.king, board)
-
-
-    def _continuous_moves(self, directions: list, board: list) -> None:
+    def _continuous_moves(self, directions: list, board: list) -> list:
         """
         Function to get moves for bishop, rook, or queen based on which directions they can move in.
         These pieces can move continuously in their given directions
         directions: list of tuples of two ints to represent directions in which the piece can move
         board: 2D list representing current chess board
-        returns: None, updates variable self.sees
+        returns: list of squares piece can see
         """
-        self.sees = []
+        result = []
         for direction in directions:
-            curr_pos = self.position
+            curr_pos = self.pos
             # In bounds
             while True:
-                next_pos = Coord(curr_pos.x + direction[0], curr_pos.y + direction[1])
-                # Out of bounds
-                if next_pos.x < 0 or next_pos.x > 7 or next_pos.y < 0 or next_pos.y > 7:
+                try:
+                    next_pos = Coord(curr_pos.x() + direction[0], curr_pos.y() + direction[1])
+                except InvalidCoordError:
                     break
-                piece = board[next_pos.x][next_pos.y]
+                x, y = next_pos
+                piece = board[x][y]
                 # Not occupied by piece
                 if piece is None:
-                    self.sees.append(next_pos)
+                    result.append(next_pos)
                     curr_pos = next_pos 
                     continue
                 # Square is blocked
@@ -197,51 +93,198 @@ class Piece:
                     break
                 # Square can be captured
                 else:
-                    self.sees.append(next_pos)
+                    result.append(next_pos)
                     break
+        return result
 
-    def _single_moves(self, directions: list, board: list) -> None:
+    def _single_moves(self, directions: list, board: list) -> list:
         """
         Function to get moves for knight or king based on which directions they can move in.
         These pieces can only move one square in their given direction 
         directions: list of tuples of two ints to represent directions in which the piece can move
         board: 2D list representing current chess board
+        returns: list of squares piece can see
+        """
+        result = []
+        for direction in directions:
+            try:
+                next_pos = Coord(self.pos.x() + direction[0], self.pos.y() + direction[1])
+            except InvalidCoordError:
+                continue
+            x, y = next_pos
+            # Not occupied by own piece
+            if board[x][y] is not None:
+                if board[x][y].get_team() == self.team:
+                    continue
+            result.append(next_pos)
+        return result
+
+
+class Pawn(Piece):
+    def __init__(self, team: str, position: Coord):
+        Piece.__init__(self, team, position)
+        self.value = 1
+        self.en_passant_turn = 0
+        self.directions = [-1, 0, 1]
+        self.move_type = 'pawn'
+    
+    def get_en_passant(self) -> int:
+        """
+        Returns turn number that the pawn moved two squares for en passant
+        """
+        return self.en_passant_turn
+    
+    def set_en_passant(self, turn_number: int) -> None:
+        """
+        Set's turn that pawn can be taken by en passant
+        """
+        self.en_passant_turn = turn_number
+        if self.team == 'B':
+            self.en_passant_turn += 1
+
+    def _pawn_moves(self, directions: list, board: list, turn_number: int) -> list:
+        """
+        Gets first set of legal pawn moves based on piece's movement
+        A pawn can move forward one space (two for first move) and can only capture diagonally
+        board: 2D list representing current chess board
         returns: None, updates variable self.sees
         """
-        self.sees = []
+        result = []
+        # Set direction pawn is moving
+        if self.team == 'W':
+            forward = 1  # Direction pawn is moving
+        else:
+            forward = -1
+        
         for direction in directions:
-            next_pos = Coord(self.position.x + direction[0], self.position.y + direction[1])
-            # In bounds
-            if next_pos.x >= 0 and next_pos.x <= 7 and next_pos.y >= 0 and next_pos.y <= 7:
-                # Not occupied by own piece
-                if board[next_pos.x][next_pos.y] is not None:
-                    if board[next_pos.x][next_pos.y].get_team() == self.team:
+            try:
+                next_pos = Coord(self.pos.x() + direction, self.pos.y() + forward)
+            except InvalidCoordError:
+                continue
+            x, y = next_pos
+            # If diagonal, don't add unless there is an oposing piece
+            if direction != 0:
+                if board[x][y] is None:
+                    if not self.check_en_passant(board, next_pos, forward, turn_number):
                         continue
-                self.sees.append(next_pos)
-
-    def _promote(self, symbol: str):
+                elif board[x][y].get_team() == self.team:
+                    continue
+            # If straight, don't add unless space is empty
+            else:
+                if board[x][y]:
+                    continue
+                # If next square is empty, add move 2 forward if piece hasn't move yet
+                if y < 7:
+                    if board[x][y + forward] is None:
+                        if (self.pos.y() == 1 and forward == 1) or (self.pos.y() == 6 and forward == -1):
+                            result.append(Coord(self.pos.x(), self.pos.y() + 2 * forward))
+            result.append(next_pos)
+        return result
+        
+    def check_en_passant(self, board: list, next_pos: Coord, direction: int, curr_turn: int) -> bool:
         """
-        Promotes pawn to piece given as a symbol Q R B N
-        piece: pawn to be promoted
-        symbol: symbol representing new piece
+        board: 2D list representing current chess board
+        next_pos: coordinate pawn would land on if takes
+        direction: direction pawn is moving
+        return: True if pawn can be en passant, false otherwise
         """
-        symbol_dict = {
-            'Q': ('Queen', 9),
-            'R': ('Rook', 5),
-            'B': ('Bishop', 3),
-            'N': ('Knight', 3)
-        }
-        # Verify pawn is ready to promote
-        if self.get_name() != 'Pawn':
-            return
-        if self.get_position().y == 0 or self.get_position().y == 7:
-            new_piece = symbol_dict[symbol]
-            self.symbol = symbol
-            self.name = new_piece[0]
-            self.value = new_piece[1]
-        return
+        x, y = next_pos
+        y -= direction
+        pawn = board[x][y]
+        if not pawn:
+            return False
+        if self.team == pawn.get_team():
+            return False
+        if not isinstance(pawn, Pawn):
+            return False
+        
+        return curr_turn == pawn.get_en_passant()
 
 
-if __name__ == '__main__':
-    game = Piece('Bishop', 'Black', Coord(0, 2))
-    print(game)
+class Knight(Piece):
+    def __init__(self, team: str, position: Coord):
+        Piece.__init__(self, team, position)
+        self.value = 3
+        self.symbol = 'N'
+        self.directions = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
+        self.move_type = 'single'
+
+
+class Bishop(Piece):
+    def __init__(self, team: str, position: Coord):
+        Piece.__init__(self, team, position)
+        self.value = 3
+        self.directions = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
+        self.move_type = 'continuous'
+
+
+class Rook(Piece):
+    def __init__(self, team: str, position: Coord):
+        Piece.__init__(self, team, position)
+        self.value = 5
+        self.castle = True
+        self.directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
+        self.move_type = 'continuous'
+
+
+class Queen(Piece):
+    def __init__(self, team: str, position: Coord):
+        Piece.__init__(self, team, position)
+        self.value = 9
+        self.directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        self.move_type = 'continuous'
+
+
+class King(Piece):
+    def __init__(self, team: str, position: Coord):
+        Piece.__init__(self, team, position)
+        self.value = 100
+        self.castle = True
+        self.directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        self.move_type = 'king'
+
+    def _king_moves(self, directions: list, board: list) -> list:
+        """
+        Gets first set of legal pawn moves based on piece's movement
+        A king can move a single space in any direction
+        A king can also castle, moving 2 spaces towards a rook, having the rook come over it
+        board: 2D list representing current chess board
+        returns: None, updates variable self.sees
+        """
+        result = self._single_moves(directions, board)
+        y = 0 if self.team == 'W' else 7
+        # Add castle possibility
+        if self.castle:
+            if self.can_castle('short', board, y):
+                result.append(Coord(6, y))
+            if self.can_castle('long', board, y):
+                result.append(Coord(2, y))
+
+        return result
+    
+    def can_castle(self, side: str, board, y: int) -> bool:
+        """
+        side: 'short' or 'long' for which side to castle
+        board: 2D list representing current chess board
+        y: y-coord of the king
+        return: True if king can castle to side, false other wise
+        """
+        if side == 'short':
+            x_vals = [5, 6]
+            rook: Rook = board[7][y]
+        if side == 'long':
+            x_vals = [3, 2, 1]
+            rook: Rook = board[0][y]
+        
+        # Check rook
+        if not isinstance(rook, Rook):
+            return False
+        if not rook.castle:
+            return False
+        
+        # Check squares for empty and vision
+        for x in x_vals:
+            if board[x][y]:
+                return False
+            
+        return True

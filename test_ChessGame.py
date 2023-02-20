@@ -1,7 +1,7 @@
 import unittest
 from ChessGame import ChessGame
 
-class TestCase(unittest.TestCase):
+class RandomTestCase(unittest.TestCase):
     def test_0(self):
         # N/A
         starting_pos = ''
@@ -93,7 +93,52 @@ class TestCase(unittest.TestCase):
         game = ChessGame(starting_pos)
         result = game.get_material_difference()
         expected = -4
-        self.assertEqual(result, expected, msg="Test 6 expected material difference = {}, got {}".format(expected, result))
+        self.assertEqual(result, expected, msg="Test 7 expected material difference = {}, got {}".format(expected, result))
+
+    def test_8(self):
+        # lvpstn vs Me
+        starting_pos = '1. e4 c6 2. f4 d5 3. e5 Bf5 4. Nf3 e6 5. d4 c5 6. Bd3 Bg6 7. O-O Nc6 8. c3 cxd4 9. cxd4 Qb6 10. Be3 Qxb2 \
+                        11. Nbd2 Bxd3 12. Rb1 Qxa2 13. Rxb7 Bxf1 14. Kxf1 Rb8 15. Rc7 Qa6+ 16. Kg1 Bb4 17. Ng5 Nge7 18. Qh5 g6 19. Qh6 Rc8 20. Qg7 Rf8 \
+                        21. Rxc8+ Qxc8 22. Qxh7 Nf5 23. Nxf7 Rxf7 24. Qg8+ Kd7 25. Qxf7+ Kd8 26. Qf6+ Kc7 27. Qg7+ Kb8 28. Qxg6 Nxe3 29. Nb3 Nxd4 30. Nxd4 Qc1+ \
+                        31. Kf2 Qd2+ 32. Ne2 Bc5 33. Kf3 Nf5 34. Qxe6 Qd3+ 35. Kg4 Qxe2+ 36. Kxf5 Kb7 37. Qd7+ Kb6 38. Qd8+ Kb5 39. Qb8+ Kc4 40. Qxa7 Bxa7 \
+                        41. e6 Qxg2'
+        game = ChessGame(starting_pos)
+        result = game.get_material_difference()
+        expected = -10
+        self.assertEqual(result, expected, msg="Test 8 expected material difference = {}, got {}".format(expected, result))
+    
+    def test_9(self):
+        # Krageven vs Me
+        starting_pos = '1. e4 e5 2. f4 exf4 3. Nf3 Nf6 4. Nc3 Nc6 5. Bc4 Bc5 6. d4 Bb6 7. O-O O-O 8. Bxf4 d5 9. Bd3 dxe4 10. Nxe4 Re8 \
+                        11. Bg5 Bxd4+ 12. Kh1 Bxb2 13. Rb1 Bc3 14. Nxc3 Bg4 15. Be2 Ne5 16. Nxe5 Bxe2 17. Qxe2 Qd5 18. Bxf6 gxf6 19. Qg4+ Kf8 20. Nf3 Qc5 \
+                        21. Nd1 Qxc2 22. Nf2 Qxf2 23. Rxf2 Re6 24. Nh4 Rae8 25. Rbf1 Re1 26. Rxf6 Rxf1+ 27. Rxf1 Re1 28. Rxe1 a5 29. Nf5 b6 30. Qf4 h5 \
+                        31. Qxc7 b5 32. Qc8#'
+        game = ChessGame(starting_pos)
+        result = game.get_material_difference()
+        expected = 16
+        self.assertEqual(result, expected, msg="Test 9 expected material difference = {}, got {}".format(expected, result))
+    
+    def test_10(self):
+        # Me vs Danijejela
+        starting_pos = '1. e4 e5 2. f4 f6 3. fxe5 fxe5 4. Nf3 d6 5. Bc4 Qf6 6. O-O h6 7. Nc3 a6 8. Nd5 Qd8 9. d3 c6 10. Nb6 Qxb6+ \
+                        11. d4 c5 12. Nxe5 dxe5 13. Qh5+ g6 14. Qxe5+ Kd8 15. Qxh8 cxd4 16. Qxg8 d3+ 17. Kh1 Nd7 18. Be6 dxc2 19. Bxd7 Bxd7 20. Qxf8+ Kc7 \
+                        21. Qxa8 Qc6 22. Bxh6 Qxe4 23. Rac1 Bc6 24. Rfe1 Qd5 25. Re7+ Kb6 26. Be3+ Kb5 27. a4+ Kb4 28. Rg1 b5 29. Qe8 Bxe8 30. Rxe8 Kxa4 \
+                        31. Ra1+ Kb3 32. Bb6 Kxb2 33. Ree1 Qc4 34. Rec1 b4 35. Bd4+ Kb3 36. Rxc2 Qxc2 37. Rb1+ Ka2 38. Bg1 Qxb1 39. h3 b3 40. Kh2 Qc2 \
+                        41. h4 b2 42. Kh3 b1=Q 43. Bd4 Qf5+ 44. g4 Qbd3+ 45. Kh2 Qf2+ 46. Kh1 Qdf1#'
+        game = ChessGame(starting_pos)
+        result = game.get_material_difference()
+        expected = -15
+        self.assertEqual(result, expected, msg="Test 9 expected material difference = {}, got {}".format(expected, result))
+
+    def test_11(self):
+        # Kami-Kase vs Me
+        starting_pos = '1. e4 d5 2. Nf3 dxe4 3. Ng5 Nf6 4. d3 exd3 5. Bxd3 Nc6 6. O-O e5 7. Re1 Bd6 8. Bf4 O-O 9. Bg3 Nd5 10. Bxh7+ Kh8 \
+                        11. Be4 Qxg5 12. Bxd5 Bg4 13. f3 Bc5+ 14. Kf1 Bh3 15. gxh3 Qh5 16. Nc3 Qxh3+ 17. Ke2 Qg2+ 18. Bf2 Nd4+ 19. Kd2 Nxf3+ 20. Bxf3 Rad8+ \
+                        21. Bd5 Qg5+ 22. Be3 Bxe3+ 23. Rxe3 Rxd5+ 24. Nxd5 Qg2+ 25. Kc1 Rd8 26. Qh5+ Kg8 27. Ne7+ Kf8 28. Nf5 Qf1+ 29. Qd1 Qxd1#'
+        game = ChessGame(starting_pos)
+        result = game.get_material_difference()
+        expected = -3
+        self.assertEqual(result, expected, msg="Test 9 expected material difference = {}, got {}".format(expected, result))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
