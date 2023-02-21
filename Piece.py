@@ -225,6 +225,9 @@ class Rook(Piece):
         self.castle = True
         self.directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
         self.move_type = 'continuous'
+    
+    def set_castle(self, val: bool) -> None:
+        self.castle = val
 
 
 class Queen(Piece):
@@ -242,6 +245,9 @@ class King(Piece):
         self.castle = True
         self.directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         self.move_type = 'king'
+
+    def set_castle(self, val: bool) -> None:
+        self.castle = val
 
     def _king_moves(self, directions: list, board: list) -> list:
         """
