@@ -222,7 +222,7 @@ class PieceVisionTestCase(unittest.TestCase):
         # White King on e1
         king: King = BOARD_1[4][0]
         result = king.get_sees(BOARD_1, TURN_NUMBER_1)
-        expected = ['c1', 'd1', 'd2', 'f2']
+        expected = ['O-O-O', 'd1', 'd2', 'f2']
         self.assertCountEqual(result, expected, msg="Expected: {}, Got: {}".format(expected, result))
 
     def test_king_2(self):

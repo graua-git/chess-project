@@ -2,6 +2,9 @@ from Board import *
 from Move import *
 import copy
 
+class GameOver(Exception):
+    pass
+
 class ChessGame:
     def __init__(self, starting_moves: str = None):
         """
@@ -105,8 +108,13 @@ class ChessGame:
         """
         Makes move, updating board and move log
         """
-        # Verify move
         turn = self.board.get_turn()
+        #self.check_game_over(turn)
+
+        if self.winner:
+            raise GameOver
+        
+        # Verify move
         try:
             curr_move = Move(self.board, turn, self.get_turn_number(), move)
         except InvalidMoveError:
@@ -116,7 +124,6 @@ class ChessGame:
         self.move_log.append(curr_move)
         self.num_moves += 1
         self.board = copy.deepcopy(curr_move.get_board_state())
-        print_all(self)
     
     def get_all_legal_moves(self) -> list[Move]:
         """
@@ -139,6 +146,14 @@ class ChessGame:
                         continue
                     result.append(curr_move)
         return result
+    
+    def check_game_over(self, team: str) -> None:
+        """
+        Sets self.winner to 'W' 'B' or 'D' for draw 
+        """
+        if len(self.get_all_legal_moves()) == 0:
+            return
+
 
 def print_all(game: ChessGame) -> None:
     """
