@@ -112,10 +112,34 @@ class ChessGame:
         except InvalidMoveError:
             return
 
+        curr_move.commit_move()
         self.move_log.append(curr_move)
         self.num_moves += 1
         self.board = copy.deepcopy(curr_move.get_board_state())
+        print_all(self)
     
+    def get_all_legal_moves(self) -> list[Move]:
+        """
+        Returns list of all legal moves for player
+        """
+        result = []
+        to_move = self.board.get_turn()
+        turn_number = self.get_turn_number()
+        for row in self.board.get_board_state():
+            for piece in row:
+                if not piece:
+                    continue
+                if piece.get_team() != to_move:
+                    continue
+                from_coord = piece.get_position()
+                for to_coord in piece.get_sees(self.board, turn_number):
+                    try:
+                        curr_move = Move(self.board, to_move, turn_number, (from_coord, to_coord))
+                    except InvalidMoveError:
+                        continue
+                    result.append(curr_move)
+        return result
+
 def print_all(game: ChessGame) -> None:
     """
     Prints the board, move_log, and player to move for game
@@ -127,19 +151,13 @@ def print_all(game: ChessGame) -> None:
 
 if __name__ == '__main__':
     """
-        '1. e4 c6 2. e5 d5 3. exd6 exd6 4. Qe2+ Qe7 5. Qxe7+ Bxe7 6. Nf3 Bg4 7. Be2 Nf6 8. d3 h6 9. O-O O-O 10. h3 Bh5 \
-        11. Nc3 Re8 12. Be3 c5 13. g4 Bg6 14. d4 cxd4 15. Nxd4 Nc6 16. Nxc6 bxc6 17. Rac1 Rab8 18. b3 d5 19. Bxa7 Ra8 20. Bd4 Ne4 \
-        21. Nxe4 Bxe4 22. a4 Ba3 23. Ra1 Bxc2 24. Rxa3 Rxe2 25. Ra2 Rae8 26. b4 Bb3 27. Rxe2 Rxe2 28. a5 Bc4 29. Bc5 Kh7 30. Kg2 Kg6 \
-        31. Kf3 Kg5 32. Rc1 Kh4 33. Rh1 d4 34. Be7+ g5 35. Bc5 Bd5+ 36. Kxe2 Bxh1 37. Bxd4 Kxh3 38. f3 Kg3 39. a6 Bxf3+ 40. Kd3 c5 \
-        41. Bxc5 Kxg4 42. b5 h5 43. b6 h4 44. a7 h3 45. b7 Bxb7 46. Bg1 Kg3 47. Ke2 Kg2 48. Bc5 h2 49. Bd6 h1=Q 50. Kd3 Qf1+ \
-        51. Kd4 Qf6+ 52. Kc5 Qf5+ 53. Kb6 Qe6 54. Kxb7 Qd7+ 55. Bc7 Qe7 56. a8=Q Qe4+ 57. Kc8 Qxa8+'
+        '1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. e3 Nf6 6. Nge2 O-O 7. O-O Qb6 8. b3 d6 9. d4 Bg4 10. f3 Bd7 \
+        11. Bb2 cxd4 12. Nxd4 e5 13. Nxc6 Bxc6 14. Na4 Qxe3+ 15. Kh1 Bxa4 16. bxa4 Rac8 17. Rc1 Qb6 18. Ba3 Rc6 19. f4 exf4 20. Bxc6 Qxc6+ \
+        21. Qf3 Qb6 22. Qxf4 Nh5 23. Qxd6 Qe3 24. Rfe1 Qf3+ 25. Kg1 Nxg3 26. Qxg3 Bd4+ 27. Qf2 Be3 28. Rxe3 Qxf2+ 29. Kxf2'
     """
-    starting_pos = '1. e4 c6 2. e5 d5 3. exd6 exd6 4. Qe2+ Qe7 5. Qxe7+ Bxe7 6. Nf3 Bg4 7. Be2 Nf6 8. d3 h6 9. O-O O-O 10. h3 Bh5 \
-                    11. Nc3 Re8 12. Be3 c5 13. g4 Bg6 14. d4 cxd4 15. Nxd4 Nc6 16. Nxc6 bxc6 17. Rac1 Rab8 18. b3 d5 19. Bxa7 Ra8 20. Bd4 Ne4 \
-                    21. Nxe4 Bxe4 22. a4 Ba3 23. Ra1 Bxc2 24. Rxa3 Rxe2 25. Ra2 Rae8 26. b4 Bb3 27. Rxe2 Rxe2 28. a5 Bc4 29. Bc5 Kh7 30. Kg2 Kg6 \
-                    31. Kf3 Kg5 32. Rc1 Kh4 33. Rh1 d4 34. Be7+ g5 35. Bc5 Bd5+ 36. Kxe2 Bxh1 37. Bxd4 Kxh3 38. f3 Kg3 39. a6 Bxf3+ 40. Kd3 c5 \
-                    41. Bxc5 Kxg4 42. b5 h5 43. b6 h4 44. a7 h3 45. b7 Bxb7 46. Bg1 Kg3 47. Ke2 Kg2 48. Bc5 h2 49. Bd6 h1=Q 50. Kd3 Qf1+ \
-                    51. Kd4 Qf6+ 52. Kc5 Qf5+ 53. Kb6 Qe6 54. Kxb7 Qd7+ 55. Bc7 Qe7 56. a8=Q Qe4+ 57. Kc8 Qxa8+'
+    starting_pos = '1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. e3 Nf6 6. Nge2 O-O 7. O-O Qb6 8. b3 d6 9. d4 Bg4 10. f3 Bd7 \
+        11. Bb2 cxd4 12. Nxd4 e5 13. Nxc6 Bxc6 14. Na4 Qxe3+ 15. Kh1 Bxa4 16. bxa4 Rac8 17. Rc1 Qb6 18. Ba3 Rc6 19. f4 exf4 20. Bxc6 Qxc6+ \
+        21. Qf3 Qb6 22. Qxf4 Nh5 23. Qxd6 Qe3 24. Rfe1 Qf3+ 25. Kg1 Nxg3 26. Qxg3 Bd4+ 27. Qf2 Be3 28. Rxe3 Qxf2+'
     game = ChessGame(starting_pos)
-    game.move('Kb7')
     print_all(game)
+    print(game.get_all_legal_moves())

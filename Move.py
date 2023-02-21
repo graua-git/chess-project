@@ -41,7 +41,7 @@ class Move:
 
         elif isinstance(move, tuple):
             self.from_coord, self.to_coord = move
-            self.notation = self.create_notation(self.to_coord, self.from_coord)
+            self.notation = self.create_notation(self.from_coord, self.to_coord)
             self.properties = {
                 'castle': self.notation[0] == 'O',
                 'check': '+' in self.notation or '#' in self.notation,
@@ -52,27 +52,23 @@ class Move:
         else:
             raise InvalidMoveError
         
-        if self.left_in_check(self.board_state):
-            raise InvalidMoveError
-
-        self.board_state.move_piece(self.from_coord, self.to_coord, self.turn_number)
-
-        if self.properties['promotion']:
-            self.promote(self.to_coord, self.promotion_piece)
+        if not self.properties['castle']:
+            if self.left_in_check(self.board_state):
+                raise InvalidMoveError
         
     def __repr__(self):
         if self.notation:
             return str(self.notation)
         else:
             return str(self.from_coord, self.to_coord)
-    
+
     def get_board_state(self):
         """
         returns board in its current state
         """
         return self.board_state
     
-    def create_notation(self, to_coord: Coord, from_coord: Coord) -> str:
+    def create_notation(self, from_coord: Coord, to_coord: Coord) -> str:
         """
         Creates chess move notation based on the board, to_coord, and from_coord
         to_coord: Coord, coordinate piece is moving to
@@ -85,12 +81,31 @@ class Move:
         if not self.piece:
             raise InvalidMoveError
         
-        symbol = self.piece.symbol()
+        symbol = self.piece.get_symbol()
         if symbol != 'P':
             result += symbol
         result += str(to_coord)
         
         return result
+    
+    def commit_move(self) -> None:
+        """
+        Makes move on the board
+        """
+        if self.properties['castle']:
+            self.castle(self.castle_side)
+            self.board_state.switch_turns()
+
+        if self.properties['takes'] and self.piece.get_symbol() == 'P':
+            x, y = self.to_coord
+            if not self.board_state[x][y]:
+                self.properties['en passant'] = True
+                self.en_passant(self.to_coord, self.turn)
+
+        self.board_state.move_piece(self.from_coord, self.to_coord, self.turn_number)
+
+        if self.properties['promotion']:
+            self.promote(self.to_coord, self.promotion_piece)
 
     def process_notation(self):
         """
@@ -101,9 +116,9 @@ class Move:
         # Castle
         if self.properties['castle']:
             self.castle_side = 'short' if temp_notation == 'O-O' else 'long'
-            symbol = 'K'
-            self.castle(self.castle_side)
-            self.board_state.switch_turns()
+            from_x = 4
+            from_y = 0 if self.turn == 'W' else 7
+            self.from_coord = Coord(from_x, from_y)
             return
         # Pawn move
         if not temp_notation[0].isupper():
@@ -139,12 +154,6 @@ class Move:
 
         # Find piece
         self.from_coord = self.find_piece(symbol, self.turn)
-    
-        if self.properties['takes'] and symbol == 'P':
-            x, y = self.to_coord
-            if not self.board_state[x][y]:
-                self.properties['en passant'] = True
-                self.en_passant(self.to_coord, self.turn)
 
     def find_piece(self, symbol: str, turn: str) -> Coord:
         """
