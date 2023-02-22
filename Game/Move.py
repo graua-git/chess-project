@@ -10,48 +10,44 @@ class InvalidNotationError(Exception):
     pass
 
 class Move:
-    def __init__(self, board_state: Board, turn: str, turn_number: int, move):
+    def __init__(self, board_state: Board, turn: str, turn_number: int, from_coord: Coord, to_coord: Coord, promotion_piece=None):
         """
         board_state: Board in its current state
         turn: str 'W' or 'B'
         turn_number: int, turn number
         move EITHER str, chess move notation || OR tuple, (from_coord: Coord, to_coord: Coord)
         """
+        self.notation = None
+
         self.board_state = board_state
-        self.piece = None
+        self.piece = self.board_state[from_coord.x()][from_coord.y()]
         self.turn = turn
         self.turn_number = turn_number
-        self.notation = None
-        self.from_coord = None
-        self.to_coord = None
-
-        self.required_x = None
-        self.required_y = None
         
-        if isinstance(move, str):
-            self.notation = move
-            self.properties = {
-                'castle': self.notation[0] == 'O',
-                'check': '+' in self.notation or '#' in self.notation,
-                'takes': 'x' in self.notation,
-                'promotion': '=' in self.notation,
-                'en passant': False
-            }
-            self.process_notation()
+        self.from_coord = from_coord
+        self.to_coord = to_coord
 
-        elif isinstance(move, tuple):
-            self.from_coord, self.to_coord = move
-            self.notation = self.create_notation(self.from_coord, self.to_coord)
-            self.properties = {
-                'castle': self.notation[0] == 'O',
-                'check': '+' in self.notation or '#' in self.notation,
-                'takes': 'x' in self.notation,
-                'promotion': '=' in self.notation,
-                'en passant': False
+        self.notation = self.create_notation(self.from_coord, self.to_coord)
+
+        self.properties = {
+            'castle': self.notation[0] == 'O',
+            'check': '+' in self.notation or '#' in self.notation,
+            'takes': 'x' in self.notation,
+            'promotion': '=' in self.notation,
+            'en passant': False
             }
-        else:
-            raise InvalidMoveError
         
+        if not self.properties['takes'] and 'x' not in self.notation:
+            self.notation = self.update_takes(self.board_state, self.from_coord, self.to_coord)
+
+        if self.to_coord:
+            if 'O' in self.to_coord:
+                self.notation = self.to_coord
+                x = 6 if self.to_coord == 'O-O' else 2
+                y = self.piece.get_position().y()
+                self.to_coord = Coord(x, y)
+                self.properties['castle'] = True
+
         if not self.properties['castle']:
             if self.left_in_check(self.board_state):
                 raise InvalidMoveError
@@ -60,7 +56,14 @@ class Move:
         if self.notation:
             return str(self.notation)
         else:
-            return str(self.from_coord, self.to_coord)
+            return str(self.from_coord) + ' to ' + str(self.to_coord)
+    
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Move):
+            return self.notation == other.notation
+        elif isinstance(other, str):
+            return self.notation == other
+        return False
 
     def get_board_state(self):
         """
@@ -71,29 +74,30 @@ class Move:
     def create_notation(self, from_coord: Coord, to_coord: Coord) -> str:
         """
         Creates chess move notation based on the board, to_coord, and from_coord
-        to_coord: Coord, coordinate piece is moving to
         from_coord: Coord piece is moving from
+        to_coord: Coord, coordinate piece is moving to
         return: str, chess move notation 
         """
-        result = ''
-        piecex, piecey = from_coord
-        self.piece = self.board_state[piecex][piecey]
-        if not self.piece:
-            raise InvalidMoveError
-        
-        symbol = self.piece.get_symbol()
-        if symbol != 'P':
-            result += symbol
-        result += str(to_coord)
-        
-        return result
+        symbol = self.piece.get_symbol() if not isinstance(self.piece, Pawn) else ''
+        square = str(to_coord)
+        return symbol + square
+    
+    def set_promotion_piece(self, piece: str) -> None:
+        """
+        Sets promotion piece to piece 'Q' 'R' 'B' or 'N', updates notation
+        """
+        if len(piece) != 1:
+            return
+        self.promotion_piece = piece
+        self.notation += '=' + piece
+        return
     
     def commit_move(self) -> None:
         """
         Makes move on the board
         """
         if self.properties['castle']:
-            self.castle(self.castle_side)
+            self.castle()
             self.board_state.switch_turns()
 
         if self.properties['takes'] and self.piece.get_symbol() == 'P':
@@ -104,71 +108,11 @@ class Move:
 
         self.board_state.move_piece(self.from_coord, self.to_coord, self.turn_number)
 
+        if isinstance(self.piece, King) or isinstance(self.piece, Rook):
+            self.piece.set_castle(False)
+
         if self.properties['promotion']:
             self.promote(self.to_coord, self.promotion_piece)
-
-    def process_notation(self):
-        """
-        Gets piece, to_coord, and from_coord from chess notation and board
-        """
-        temp_notation = self.notation
-
-        # Castle
-        if self.properties['castle']:
-            self.castle_side = 'short' if temp_notation == 'O-O' else 'long'
-            from_x = 4
-            from_y = 0 if self.turn == 'W' else 7
-            self.from_coord = Coord(from_x, from_y)
-            return
-        # Pawn move
-        if not temp_notation[0].isupper():
-            symbol = 'P'
-        # Other piece move
-        else:
-            symbol = temp_notation[0]
-            temp_notation = temp_notation[1:]
-
-        # Remove + or # from notation
-        if self.properties['check']:
-            temp_notation = temp_notation[:-1]
-        
-        # Store promotion piece and remove given notation
-        if self.properties['promotion']:
-            self.promotion_piece = temp_notation[-1]
-            temp_notation = temp_notation[:-2]
-
-        # Get to coord
-        square = temp_notation[-2:]
-        self.to_coord = self.convert_chess_notation(square)
-        temp_notation = temp_notation[:-2]
-
-        # Find required x or y coordinate
-        if temp_notation:
-            val = temp_notation[0]
-            letters = 'abcdefgh'
-            nums = '12345678'
-            if val in letters:
-                self.required_x = letters.index(val)
-            elif val in nums:
-                self.required_y = int(val) - 1
-
-        # Find piece
-        self.from_coord = self.find_piece(symbol, self.turn)
-
-    def find_piece(self, symbol: str, turn: str) -> Coord:
-        """
-        Finds piece with corresponding symbol
-        symbol: symbol of piece
-        turn: player whose turn it is
-        return: Coord piece is coming from
-        """
-        for row in self.board_state:
-            for piece in row:
-                if self.correct_piece(piece, symbol, turn):
-                    if self.to_coord in piece.get_sees(self.board_state.get_board_state(), self.turn_number):
-                        self.piece = piece
-                        return piece.get_position()
-        raise InvalidMoveError
                     
     def correct_piece(self, piece: Piece, symbol: str, team: str) -> bool:
         """
@@ -200,11 +144,11 @@ class Move:
             raise InvalidNotationError
         return Coord(letters.index(x), y)
 
-    def castle(self, castle_side):
+    def castle(self):
         """
         Castle's King
         """
-        short = castle_side == 'short'
+        short = self.to_coord.x() == 6
         y = 0 if self.turn == 'W' else 7
         self.piece = self.board_state[4][y]
         self.from_coord = Coord(4, y)
@@ -250,3 +194,23 @@ class Move:
         hypothetical = Board(new_board, self.turn)
         hypothetical.move_piece(self.from_coord, self.to_coord, self.turn_number)
         return hypothetical.in_check(self.turn_number, self.piece.get_team())
+
+    def update_takes(self, board: Board, from_coord: Coord, to_coord: Coord) -> str:
+        """
+        returns new notation if piece took another one
+        """
+        if not from_coord or not to_coord or str(to_coord)[0] == 'O':
+            return
+        x, y = to_coord
+        if not board[x][y]:
+            return self.notation
+        symbol = self.piece.get_symbol()
+        if symbol == 'P':
+            symbol = str(from_coord)[0]
+        return symbol + 'x' + str(to_coord)
+    
+    def update_castles(self, notation: str):
+        """
+        returns new notation if piece castled
+        """
+        self.properties['castle'] = 'short' if notation == 'O-O' else 'long'

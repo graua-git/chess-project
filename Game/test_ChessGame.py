@@ -13,8 +13,8 @@ class RandomTestCase(unittest.TestCase):
     def test_1(self):
         # andrewmcleodnz vs Me
         starting_pos = '1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. e3 Nf6 6. Nge2 O-O 7. O-O Qb6 8. b3 d6 9. d4 Bg4 10. f3 Bd7 \
-                        11. Bb2 cxd4 12. Nxd4 e5 13. Nxc6 Bxc6 14. Na4 Qxe3+ 15. Kh1 Bxa4 16. bxa4 Rac8 17. Rc1 Qb6 18. Ba3 Rc6 19. f4 exf4 20. Bxc6 Qxc6+ \
-                        21. Qf3 Qb6 22. Qxf4 Nh5 23. Qxd6 Qe3 24. Rfe1 Qf3+ 25. Kg1 Nxg3 26. Qxg3 Bd4+ 27. Qf2 Be3 28. Rxe3 Qxf2+ 29. Kxf2'
+                        11. Bb2 cxd4 12. Nxd4 e5 13. Nxc6 Bxc6 14. Na4 Qxe3 15. Kh1 Bxa4 16. bxa4 Rac8 17. Rc1 Qb6 18. Ba3 Rc6 19. f4 exf4 20. Bxc6 Qxc6 \
+                        21. Qf3 Qb6 22. Qxf4 Nh5 23. Qxd6 Qe3 24. Rfe1 Qf3 25. Kg1 Nxg3 26. Qxg3 Bd4 27. Qf2 Be3 28. Rxe3 Qxf2 29. Kxf2'
         game = ChessGame(starting_pos)
         result = game.get_material_difference()
         expected = 7

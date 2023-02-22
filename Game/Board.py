@@ -49,6 +49,8 @@ class Board:
         from_coord: Coordinate on chess board to represent starting position
         to_coord: Coordinate on chess board to represent ending position
         """
+        if 'O-O' in to_coord:
+            return
         piece = self.board_state[from_coord.x()][from_coord.y()]
         piece.set_position(to_coord)
         self.board_state[from_coord.x()][from_coord.y()] = None
