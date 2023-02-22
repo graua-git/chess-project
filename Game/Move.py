@@ -26,8 +26,9 @@ class Move:
         
         self.from_coord = from_coord
         self.to_coord = to_coord
-
-        self.notation = self.create_notation(self.from_coord, self.to_coord)
+        
+        if 'O' not in self.to_coord:
+            self.notation = self.create_notation(self.from_coord, self.to_coord)
 
         self.properties = {
             'castle': self.notation[0] == 'O',
@@ -78,9 +79,13 @@ class Move:
         to_coord: Coord, coordinate piece is moving to
         return: str, chess move notation 
         """
-        symbol = self.piece.get_symbol() if not isinstance(self.piece, Pawn) else ''
-        square = str(to_coord)
-        return symbol + square
+        result = ''
+        pawn = isinstance(self.piece, Pawn)
+        result += self.piece.get_symbol() if not pawn else ''
+        if self.board_state[to_coord.x()][to_coord.y()]:
+            result += str(from_coord)[0] if pawn else ''
+            result += 'x'
+        return result + str(to_coord)
     
     def set_promotion_piece(self, piece: str) -> None:
         """

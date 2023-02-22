@@ -1,12 +1,24 @@
 from ChessGame import ChessGame
 from Bots import *
+import time
 
-game = ChessGame()
+results = {'W': 0, 'B': 0, 'D': 0}
 
-while not game.get_winner():
-    bot = Kevin()
-    move_list = game.get_all_legal_moves()
-    bot_move = bot.pick_move(move_list)
-    game.move(str(bot_move))
-    print_all(game)
-print("Result: ", game.get_winner())
+for i in range(100):
+    white = Kevin('W')
+    black = Kevin('B')
+    
+    game = ChessGame()
+    bots = {'W': white, 'B': black}
+
+    while not game.get_winner():
+        move_list = game.get_all_legal_moves()
+        bot = bots[game.get_turn()]
+        bot_move = bot.pick_move(game)
+        game.move(str(bot_move))
+        print_all(game)
+
+    winner = game.get_winner()
+    results[winner] += 1
+
+print(results)

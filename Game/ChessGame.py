@@ -15,6 +15,8 @@ class ChessGame:
         self.num_moves = 0
         self.winner = None
 
+        self.legal_moves = self.set_all_legal_moves()
+
         if starting_moves:
             self.set_log(starting_moves)
 
@@ -81,6 +83,12 @@ class ChessGame:
         final_move = self._move_log[-1]
         return final_move.board_state()
     
+    def get_all_legal_moves(self) -> list[Move]:
+        """
+        Returns all legal moves
+        """
+        return self.legal_moves
+
     # ------------------------------------------- Setters -------------------------------------------
     def set_log(self, log: str) -> None:
         """
@@ -116,7 +124,8 @@ class ChessGame:
         potential_moves = self.get_all_legal_moves()
 
         if len(potential_moves) == 0 or self.get_turn_number() > 100:
-            self.end_game()
+            self.end_game('turns')
+            return
         
         # Verify move
         if move in potential_moves:
@@ -128,8 +137,12 @@ class ChessGame:
         self.move_log.append(curr_move)
         self.num_moves += 1
         self.board = copy.deepcopy(curr_move.get_board_state())
+        self.legal_moves = self.set_all_legal_moves()
+        if len(self.legal_moves) == 0:
+            self.end_game('moves')
+            return
     
-    def get_all_legal_moves(self) -> list[Move]:
+    def set_all_legal_moves(self) -> list[Move]:
         """
         Returns list of all legal moves for player
         """
@@ -159,11 +172,20 @@ class ChessGame:
                     result.append(curr_move)
         return result
     
-    def end_game(self):
+    def end_game(self, cause: str):
         """
         Ends game
         """
-        self.winner = 'D'
+        if cause == 'turns':
+            self.winner = 'D'
+            return
+        
+        team = self.get_turn()
+        if self.board.in_check(self.get_turn_number(), team):
+            self.winner = 'W' if team == 'B' else 'B'
+        else:
+            self.winner = 'D'
+        return
             
     def promotion_move(self, piece: Piece, to_coord: Coord) -> bool:
         if isinstance(piece, Pawn):
@@ -180,10 +202,11 @@ def print_all(game: ChessGame) -> None:
     print(game)
     print("Valutation: ", game.get_material_difference())
     print("Move Log: ", game.get_move_log())
-    print(game.get_turn() + " to move...")
+    if not game.get_winner():
+        print(game.get_turn() + " to move...")
 
 if __name__ == '__main__':
-    starting_position = '1. e4 e5 2. d4 exd4 3. c3 dxc3 4. Bc4 cxb2 5. Qa4'
+    starting_position = '1. e4 e5 2. Bc4 Nc6 3. Qf3 b6'
     game = ChessGame(starting_position)
     while not game.get_winner():
         print_all(game)
