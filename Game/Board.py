@@ -109,3 +109,9 @@ class Board:
                     if piece.get_team() != team:
                         if king_location in piece.get_sees(self.board_state, turn_number):
                             return True
+
+    def update_all_sees(self, turn_number: int) -> None:
+        for row in self.board_state:
+            for piece in row:
+                if piece:
+                    piece.update_sees(self.board_state, turn_number)

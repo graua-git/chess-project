@@ -4,9 +4,9 @@ import time
 
 results = {'W': 0, 'B': 0, 'D': 0}
 
-for i in range(100):
-    white = Kevin('W')
-    black = Kevin('B')
+for i in range(1):
+    white = Flau('W')
+    black = Nick('B')
     
     game = ChessGame()
     bots = {'W': white, 'B': black}

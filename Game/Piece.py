@@ -45,8 +45,6 @@ class Piece:
         """
         return: list of Coords piece can see based on its movement
         """
-        self.turn_number_ref = turn_number
-        self.update_sees(board)
         return self.sees
 
     # ------------------------------------------- Setters -------------------------------------------
@@ -57,10 +55,11 @@ class Piece:
         """
         self.pos = position
     
-    def update_sees(self, board: list) -> None:
+    def update_sees(self, board: list, turn_number: int) -> None:
         """
         Updates what squares the piece can see
         """
+        self.turn_number_ref = turn_number
         self.sees = eval('self._' + str(self.move_type) + '_moves(self.directions, board)')  
     
     def _continuous_moves(self, directions: list, board: list) -> list:

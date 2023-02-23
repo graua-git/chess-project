@@ -22,6 +22,9 @@ pawn.set_en_passant(13)
 rook: Rook = BOARD_1[7][7]
 rook.set_castle(False)
 
+b1 = Board(BOARD_1)
+b1.update_all_sees(TURN_NUMBER_1)
+
 class PieceVisionTestCase(unittest.TestCase):
     # ------------------------------------------------ Pawns ------------------------------------------------
     def test_pawn_1(self):

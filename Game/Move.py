@@ -30,6 +30,13 @@ class Move:
         if 'O' not in self.to_coord:
             self.notation = self.create_notation(self.from_coord, self.to_coord)
 
+        if self.to_coord:
+            if 'O' in self.to_coord:
+                self.notation = self.to_coord
+                x = 6 if self.to_coord == 'O-O' else 2
+                y = self.piece.get_position().y()
+                self.to_coord = Coord(x, y)
+
         self.properties = {
             'castle': self.notation[0] == 'O',
             'check': '+' in self.notation or '#' in self.notation,
@@ -40,14 +47,6 @@ class Move:
         
         if not self.properties['takes'] and 'x' not in self.notation:
             self.notation = self.update_takes(self.board_state, self.from_coord, self.to_coord)
-
-        if self.to_coord:
-            if 'O' in self.to_coord:
-                self.notation = self.to_coord
-                x = 6 if self.to_coord == 'O-O' else 2
-                y = self.piece.get_position().y()
-                self.to_coord = Coord(x, y)
-                self.properties['castle'] = True
 
         if not self.properties['castle']:
             if self.left_in_check(self.board_state):
@@ -65,6 +64,9 @@ class Move:
         elif isinstance(other, str):
             return self.notation == other
         return False
+    
+    def __iter__(self):
+        return iter(self.notation)
 
     def get_board_state(self):
         """
@@ -72,6 +74,12 @@ class Move:
         """
         return self.board_state
     
+    def get_piece(self):
+        """
+        returns piece being moved
+        """
+        return self.piece
+
     def create_notation(self, from_coord: Coord, to_coord: Coord) -> str:
         """
         Creates chess move notation based on the board, to_coord, and from_coord
@@ -82,9 +90,17 @@ class Move:
         result = ''
         pawn = isinstance(self.piece, Pawn)
         result += self.piece.get_symbol() if not pawn else ''
+        result += self.get_required_coord(from_coord, to_coord)
+
         if self.board_state[to_coord.x()][to_coord.y()]:
             result += str(from_coord)[0] if pawn else ''
             result += 'x'
+        
+        elif pawn:
+            direction = 1 if self.piece.get_team() == 'W' else -1
+            if self.piece.check_en_passant(self.board_state, to_coord, direction):
+                result += str(from_coord)[0] + 'x'
+            
         return result + str(to_coord)
     
     def set_promotion_piece(self, piece: str) -> None:
@@ -198,6 +214,7 @@ class Move:
         new_board = copy.deepcopy(board.get_board_state())
         hypothetical = Board(new_board, self.turn)
         hypothetical.move_piece(self.from_coord, self.to_coord, self.turn_number)
+        hypothetical.update_all_sees(self.turn_number)
         return hypothetical.in_check(self.turn_number, self.piece.get_team())
 
     def update_takes(self, board: Board, from_coord: Coord, to_coord: Coord) -> str:
@@ -219,3 +236,28 @@ class Move:
         returns new notation if piece castled
         """
         self.properties['castle'] = 'short' if notation == 'O-O' else 'long'
+
+    def get_required_coord(self, from_coord: Coord, to_coord: Coord) -> str:
+        result = ''
+        if not isinstance(self.piece, Pawn) and not isinstance(self.piece, King):
+            piece_type = self.piece.__class__
+            for row in self.board_state:
+                for other_piece in row:
+                    if other_piece is self.piece:
+                        continue
+                    if other_piece.__class__ != piece_type:
+                        continue
+                    elif other_piece.get_team() != self.piece.get_team():
+                        continue
+                    elif to_coord not in other_piece.get_sees(self.board_state, self.turn_number):
+                        continue
+                    
+                    if other_piece.get_position().x() == self.piece.get_position().x():
+                        result += str(from_coord.y() + 1)
+                    else:
+                        letters = 'abcdefgh'
+                        result += letters[self.from_coord.x()]
+        return result
+    
+    def set_board(self, h_board: Board) -> None:
+        self.board_state = h_board

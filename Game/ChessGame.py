@@ -15,6 +15,7 @@ class ChessGame:
         self.num_moves = 0
         self.winner = None
 
+        self.board.update_all_sees(1)
         self.legal_moves = self.set_all_legal_moves()
 
         if starting_moves:
@@ -80,8 +81,7 @@ class ChessGame:
         """
         Returns the board state of the last move played
         """
-        final_move = self._move_log[-1]
-        return final_move.board_state()
+        return self.board
     
     def get_all_legal_moves(self) -> list[Move]:
         """
@@ -137,11 +137,12 @@ class ChessGame:
         self.move_log.append(curr_move)
         self.num_moves += 1
         self.board = copy.deepcopy(curr_move.get_board_state())
+        self.board.update_all_sees(self.get_turn_number())
         self.legal_moves = self.set_all_legal_moves()
         if len(self.legal_moves) == 0:
             self.end_game('moves')
             return
-    
+
     def set_all_legal_moves(self) -> list[Move]:
         """
         Returns list of all legal moves for player
@@ -206,8 +207,9 @@ def print_all(game: ChessGame) -> None:
         print(game.get_turn() + " to move...")
 
 if __name__ == '__main__':
-    starting_position = '1. e4 e5 2. Bc4 Nc6 3. Qf3 b6'
+    starting_position = '1. e4 d5 2. exd5 e5 3. dxe6 Bxe6 4. Nf3 a5 5. Nc3 g6 6. Bb5 c6 7. Be2 h5 8. h4 a4 9. a3 Bxa3 10. bxa3 c5 11. Ne4 g5'
     game = ChessGame(starting_position)
+    game.move('exd6')
     while not game.get_winner():
         print_all(game)
         print(game.get_all_legal_moves())

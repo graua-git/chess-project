@@ -1,18 +1,15 @@
 from ChessGame import *
-from Bots import Kevin
+from Bots import *
 
 game = ChessGame()
 
-bot = {
-    'name': Kevin(),
-    'team': 'B'
-}
+bot = Flau('B')
 
 while not game.get_winner():
-    if game.get_turn() == bot['team']:
+    if game.get_turn() == bot.team:
         print_all(game)
         move_list = game.get_all_legal_moves()
-        bot_move = bot['name'].pick_move(move_list)
+        bot_move = bot.pick_move(game)
         game.move(str(bot_move))
     
     else:
