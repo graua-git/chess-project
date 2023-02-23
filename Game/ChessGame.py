@@ -2,6 +2,9 @@ from Board import *
 from Move import *
 import copy
 
+class GameOver(Exception):
+    pass
+
 class ChessGame:
     def __init__(self, starting_moves: str = None):
         """
@@ -11,6 +14,9 @@ class ChessGame:
         self.move_log = []
         self.num_moves = 0
         self.winner = None
+
+        self.board.update_all_sees(1)
+        self.legal_moves = self.set_all_legal_moves()
 
         if starting_moves:
             self.set_log(starting_moves)
@@ -43,6 +49,12 @@ class ChessGame:
         """
         return self.board.get_turn()
 
+    def get_winner(self) -> str:
+        """
+        return: winner
+        """
+        return self.winner
+
     def get_material_difference(self) -> int:
         """
         return: difference in material points, + for white, - for black
@@ -69,16 +81,20 @@ class ChessGame:
         """
         Returns the board state of the last move played
         """
-        final_move = self._move_log[-1]
-        return final_move.board_state()
+        return self.board
     
+    def get_all_legal_moves(self) -> list[Move]:
+        """
+        Returns all legal moves
+        """
+        return self.legal_moves
+
     # ------------------------------------------- Setters -------------------------------------------
     def set_log(self, log: str) -> None:
         """
         Converts string move log into list
         """
         nums = '0123456789'
-        board = Board()
         result = []
         
         # Split string to get move notations
@@ -105,17 +121,81 @@ class ChessGame:
         """
         Makes move, updating board and move log
         """
+        potential_moves = self.get_all_legal_moves()
+
+        if len(potential_moves) == 0 or self.get_turn_number() > 100:
+            self.end_game('turns')
+            return
+        
         # Verify move
-        turn = self.board.get_turn()
-        try:
-            curr_move = Move(self.board, turn, self.get_turn_number(), move)
-        except InvalidMoveError:
+        if move in potential_moves:
+            curr_move = potential_moves[potential_moves.index(move)]
+        else:
             return
 
+        curr_move.commit_move()
         self.move_log.append(curr_move)
         self.num_moves += 1
         self.board = copy.deepcopy(curr_move.get_board_state())
+        self.board.update_all_sees(self.get_turn_number())
+        self.legal_moves = self.set_all_legal_moves()
+        if len(self.legal_moves) == 0:
+            self.end_game('moves')
+            return
+
+    def set_all_legal_moves(self) -> list[Move]:
+        """
+        Returns list of all legal moves for player
+        """
+        result = []
+        to_move = self.board.get_turn()
+        turn_number = self.get_turn_number()
+        for row in self.board.get_board_state():
+            for piece in row:
+                if not piece:
+                    continue
+                if piece.get_team() != to_move:
+                    continue
+                from_coord = piece.get_position()
+                for to_coord in piece.get_sees(self.board, turn_number):
+                    try:
+                        curr_move = Move(self.board, to_move, turn_number, from_coord, to_coord)
+                        if self.promotion_move(piece, to_coord):
+                            pieces = ['Q', 'R', 'B', 'N']
+                            for upgrade in pieces:
+                                promotion_move = copy.deepcopy(curr_move)
+                                promotion_move.properties['promotion'] = True
+                                promotion_move.set_promotion_piece(upgrade)
+                                result.append(promotion_move)
+                            continue
+                    except InvalidMoveError:
+                        continue
+                    result.append(curr_move)
+        return result
     
+    def end_game(self, cause: str):
+        """
+        Ends game
+        """
+        if cause == 'turns':
+            self.winner = 'D'
+            return
+        
+        team = self.get_turn()
+        if self.board.in_check(self.get_turn_number(), team):
+            self.winner = 'W' if team == 'B' else 'B'
+        else:
+            self.winner = 'D'
+        return
+            
+    def promotion_move(self, piece: Piece, to_coord: Coord) -> bool:
+        if isinstance(piece, Pawn):
+            y = to_coord.y()
+            team = piece.get_team()
+            return (y == 7 and team == 'W') or (y == 0 and team == 'B')
+        return False
+
+
 def print_all(game: ChessGame) -> None:
     """
     Prints the board, move_log, and player to move for game
@@ -123,23 +203,19 @@ def print_all(game: ChessGame) -> None:
     print(game)
     print("Valutation: ", game.get_material_difference())
     print("Move Log: ", game.get_move_log())
-    print(game.get_turn() + " to move...")
+    if not game.get_winner():
+        print(game.get_turn() + " to move...")
 
 if __name__ == '__main__':
-    """
-        '1. e4 c6 2. e5 d5 3. exd6 exd6 4. Qe2+ Qe7 5. Qxe7+ Bxe7 6. Nf3 Bg4 7. Be2 Nf6 8. d3 h6 9. O-O O-O 10. h3 Bh5 \
-        11. Nc3 Re8 12. Be3 c5 13. g4 Bg6 14. d4 cxd4 15. Nxd4 Nc6 16. Nxc6 bxc6 17. Rac1 Rab8 18. b3 d5 19. Bxa7 Ra8 20. Bd4 Ne4 \
-        21. Nxe4 Bxe4 22. a4 Ba3 23. Ra1 Bxc2 24. Rxa3 Rxe2 25. Ra2 Rae8 26. b4 Bb3 27. Rxe2 Rxe2 28. a5 Bc4 29. Bc5 Kh7 30. Kg2 Kg6 \
-        31. Kf3 Kg5 32. Rc1 Kh4 33. Rh1 d4 34. Be7+ g5 35. Bc5 Bd5+ 36. Kxe2 Bxh1 37. Bxd4 Kxh3 38. f3 Kg3 39. a6 Bxf3+ 40. Kd3 c5 \
-        41. Bxc5 Kxg4 42. b5 h5 43. b6 h4 44. a7 h3 45. b7 Bxb7 46. Bg1 Kg3 47. Ke2 Kg2 48. Bc5 h2 49. Bd6 h1=Q 50. Kd3 Qf1+ \
-        51. Kd4 Qf6+ 52. Kc5 Qf5+ 53. Kb6 Qe6 54. Kxb7 Qd7+ 55. Bc7 Qe7 56. a8=Q Qe4+ 57. Kc8 Qxa8+'
-    """
-    starting_pos = '1. e4 c6 2. e5 d5 3. exd6 exd6 4. Qe2+ Qe7 5. Qxe7+ Bxe7 6. Nf3 Bg4 7. Be2 Nf6 8. d3 h6 9. O-O O-O 10. h3 Bh5 \
-                    11. Nc3 Re8 12. Be3 c5 13. g4 Bg6 14. d4 cxd4 15. Nxd4 Nc6 16. Nxc6 bxc6 17. Rac1 Rab8 18. b3 d5 19. Bxa7 Ra8 20. Bd4 Ne4 \
-                    21. Nxe4 Bxe4 22. a4 Ba3 23. Ra1 Bxc2 24. Rxa3 Rxe2 25. Ra2 Rae8 26. b4 Bb3 27. Rxe2 Rxe2 28. a5 Bc4 29. Bc5 Kh7 30. Kg2 Kg6 \
-                    31. Kf3 Kg5 32. Rc1 Kh4 33. Rh1 d4 34. Be7+ g5 35. Bc5 Bd5+ 36. Kxe2 Bxh1 37. Bxd4 Kxh3 38. f3 Kg3 39. a6 Bxf3+ 40. Kd3 c5 \
-                    41. Bxc5 Kxg4 42. b5 h5 43. b6 h4 44. a7 h3 45. b7 Bxb7 46. Bg1 Kg3 47. Ke2 Kg2 48. Bc5 h2 49. Bd6 h1=Q 50. Kd3 Qf1+ \
-                    51. Kd4 Qf6+ 52. Kc5 Qf5+ 53. Kb6 Qe6 54. Kxb7 Qd7+ 55. Bc7 Qe7 56. a8=Q Qe4+ 57. Kc8 Qxa8+'
-    game = ChessGame(starting_pos)
-    game.move('Kb7')
+    starting_position = '1. e4 d5 2. exd5 e5 3. dxe6 Bxe6 4. Nf3 a5 5. Nc3 g6 6. Bb5 c6 7. Be2 h5 8. h4 a4 9. a3 Bxa3 10. bxa3 c5 11. Ne4 g5'
+    game = ChessGame(starting_position)
+    game.move('exd6')
+    while not game.get_winner():
+        print_all(game)
+        print(game.get_all_legal_moves())
+        move = input("Next Move: ")
+        if move.lower() == 'stop' or move.lower() == 'kill':
+            break
+        game.move(move)
     print_all(game)
+    print("Result: ", game.get_winner())

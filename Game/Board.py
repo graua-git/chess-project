@@ -49,6 +49,8 @@ class Board:
         from_coord: Coordinate on chess board to represent starting position
         to_coord: Coordinate on chess board to represent ending position
         """
+        if 'O-O' in to_coord:
+            return
         piece = self.board_state[from_coord.x()][from_coord.y()]
         piece.set_position(to_coord)
         self.board_state[from_coord.x()][from_coord.y()] = None
@@ -107,3 +109,9 @@ class Board:
                     if piece.get_team() != team:
                         if king_location in piece.get_sees(self.board_state, turn_number):
                             return True
+
+    def update_all_sees(self, turn_number: int) -> None:
+        for row in self.board_state:
+            for piece in row:
+                if piece:
+                    piece.update_sees(self.board_state, turn_number)

@@ -8,6 +8,7 @@ class Piece:
         self.name = self.__class__.__name__
         self.symbol = self.__class__.__name__[0]
         self.sees = []
+        self.turn_number_ref = 0
 
     def __repr__(self):
         return self.team + '  ' + self.symbol
@@ -44,7 +45,6 @@ class Piece:
         """
         return: list of Coords piece can see based on its movement
         """
-        self.update_sees(board, turn_number)
         return self.sees
 
     # ------------------------------------------- Setters -------------------------------------------
@@ -55,14 +55,12 @@ class Piece:
         """
         self.pos = position
     
-    def update_sees(self, board: list, turn_num: int) -> None:
+    def update_sees(self, board: list, turn_number: int) -> None:
         """
         Updates what squares the piece can see
         """
-        if self.move_type == 'pawn':
-            self.sees = self._pawn_moves(self.directions, board, turn_num)
-        else:
-            self.sees = eval('self._' + str(self.move_type) + '_moves(self.directions, board)')  
+        self.turn_number_ref = turn_number
+        self.sees = eval('self._' + str(self.move_type) + '_moves(self.directions, board)')  
     
     def _continuous_moves(self, directions: list, board: list) -> list:
         """
@@ -142,7 +140,7 @@ class Pawn(Piece):
         if self.team == 'B':
             self.en_passant_turn += 1
 
-    def _pawn_moves(self, directions: list, board: list, turn_number: int) -> list:
+    def _pawn_moves(self, directions: list, board: list) -> list:
         """
         Gets first set of legal pawn moves based on piece's movement
         A pawn can move forward one space (two for first move) and can only capture diagonally
@@ -165,7 +163,7 @@ class Pawn(Piece):
             # If diagonal, don't add unless there is an oposing piece
             if direction != 0:
                 if board[x][y] is None:
-                    if not self.check_en_passant(board, next_pos, forward, turn_number):
+                    if not self.check_en_passant(board, next_pos, forward):
                         continue
                 elif board[x][y].get_team() == self.team:
                     continue
@@ -181,7 +179,7 @@ class Pawn(Piece):
             result.append(next_pos)
         return result
         
-    def check_en_passant(self, board: list, next_pos: Coord, direction: int, curr_turn: int) -> bool:
+    def check_en_passant(self, board: list, next_pos: Coord, direction: int) -> bool:
         """
         board: 2D list representing current chess board
         next_pos: coordinate pawn would land on if takes
@@ -198,7 +196,7 @@ class Pawn(Piece):
         if not isinstance(pawn, Pawn):
             return False
         
-        return curr_turn == pawn.get_en_passant()
+        return self.turn_number_ref == pawn.get_en_passant()
 
 
 class Knight(Piece):
@@ -262,9 +260,9 @@ class King(Piece):
         # Add castle possibility
         if self.castle:
             if self.can_castle('short', board, y):
-                result.append(Coord(6, y))
+                result.append('O-O')
             if self.can_castle('long', board, y):
-                result.append(Coord(2, y))
+                result.append('O-O-O')
 
         return result
     
@@ -277,9 +275,11 @@ class King(Piece):
         """
         if side == 'short':
             x_vals = [5, 6]
+            check_x_vals = [4, 5, 6]
             rook: Rook = board[7][y]
         if side == 'long':
             x_vals = [3, 2, 1]
+            check_x_vals = [4, 3, 2]
             rook: Rook = board[0][y]
         
         # Check rook
@@ -293,4 +293,34 @@ class King(Piece):
             if board[x][y]:
                 return False
             
+        # Check to see if King castles out of, into, or through check
+        for x in check_x_vals:
+            square = Coord(x, y)
+            opposing_team = 'W' if self.team == 'B' else 'B'
+            if self.check_visibility(opposing_team, board, square):
+                return False
+
         return True
+    
+    def check_visibility(self, opposing_team: str, board: list, square: Coord) -> bool:
+        """
+        return: True if opposing_team has a piece that can see square, False otherwise
+        opposing_team: str, team who were checking
+        board: 2D list representing chess board
+        square: Coord, square we're checking to see if opposing team can see
+        """
+        for row in board:
+            for piece in row:
+                if not piece:
+                    continue
+                if piece.get_team() != opposing_team:
+                    continue
+                if isinstance(piece, King):
+                    pos = piece.get_position()
+                    if opposing_team == 'W':
+                        return pos == 'g7' or pos == 'b7'
+                    else:
+                        return pos == 'g2' or pos == 'b2'
+                if square in piece.get_sees(board, self.turn_number_ref):
+                    return True
+        return False
