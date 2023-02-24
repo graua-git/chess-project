@@ -187,6 +187,7 @@ class Move:
         Promotes pawn at coord
         """
         team = self.turn
+        self.board_state.remove_piece(Pawn(team, coord))
         if symbol == 'Q':
             piece = Queen(team, coord)
         elif symbol == 'R':
@@ -195,7 +196,7 @@ class Move:
             piece = Bishop(team, coord)
         elif symbol == 'N':
             piece = Knight(team, coord)
-        self.board_state[coord.x()][coord.y()] = piece
+        self.board_state.add_piece(piece, team, coord)
         return 
 
     def en_passant(self, to_coord: Coord, team = str) -> None:
@@ -203,8 +204,9 @@ class Move:
         Removes pawn captured by En passant
         """
         y_change = 1 if team == 'W' else -1
+        enemy = 'W' if team == 'B' else 'B'
         x, y = to_coord
-        self.board_state[x][y - y_change] = None
+        self.board_state.remove_piece(Pawn(enemy, Coord(x, y - y_change)))
         return
 
     def left_in_check(self, board: Board) -> bool:
@@ -241,22 +243,24 @@ class Move:
         result = ''
         if not isinstance(self.piece, Pawn) and not isinstance(self.piece, King):
             piece_type = self.piece.__class__
-            for row in self.board_state:
-                for other_piece in row:
-                    if other_piece is self.piece:
-                        continue
-                    if other_piece.__class__ != piece_type:
-                        continue
-                    elif other_piece.get_team() != self.piece.get_team():
-                        continue
-                    elif to_coord not in other_piece.get_sees(self.board_state, self.turn_number):
-                        continue
-                    
-                    if other_piece.get_position().x() == self.piece.get_position().x():
-                        result += str(from_coord.y() + 1)
-                    else:
-                        letters = 'abcdefgh'
-                        result += letters[self.from_coord.x()]
+            team = self.piece.get_team()
+            piece_list = self.board_state.get_white_pieces() if team == 'W' else self.board_state.get_black_pieces()
+            for other_piece in piece_list:
+                if other_piece is self.piece:
+                    continue
+                if other_piece.__class__ != piece_type:
+                    continue
+                elif other_piece.get_team() != self.piece.get_team():
+                    continue
+                elif to_coord not in other_piece.get_sees(self.board_state, self.turn_number):
+                    continue
+                
+                # Multiple pieces can see the to_coord
+                if other_piece.get_position().x() == self.piece.get_position().x():
+                    result += str(from_coord.y() + 1)
+                else:
+                    letters = 'abcdefgh'
+                    result += letters[self.from_coord.x()]
         return result
     
     def set_board(self, h_board: Board) -> None:

@@ -12,6 +12,9 @@ class Board:
         if not self.board_state:
             self.board_state = self.starting_board()
         self.turn = 'W'
+        self.w_piece_ref = []
+        self.b_piece_ref = []
+        self.set_piece_ref()
     
     def __repr__(self):
         result = '------------------------------------------------ \n'
@@ -37,11 +40,39 @@ class Board:
     def get_turn(self):
         return self.turn
     
+    def get_white_pieces(self):
+        return self.w_piece_ref
+    
+    def get_black_pieces(self):
+        return self.b_piece_ref
+
     def switch_turns(self):
         """
         Switches player's turn
         """
         self.turn = 'W' if self.turn == 'B' else 'B'
+        return
+    
+    def add_piece(self, piece: Piece, team: str, coord: Coord):
+        if team == 'W':
+            self.w_piece_ref.append(piece)
+        else:
+            self.b_piece_ref.append(piece)
+        self.board_state[coord.x()][coord.y()] = piece
+        return
+
+    def set_piece_ref(self) -> None:
+        """
+        Sets list of pieces to be used a reference
+        """
+        for row in self.board_state:
+            for piece in row:
+                if not piece:
+                    continue
+                if piece.get_team() == 'W':
+                    self.w_piece_ref.append(piece)
+                else:
+                    self.b_piece_ref.append(piece)
 
     def move_piece(self, from_coord: Coord, to_coord: Coord, turn_number: int) -> None:
         """
@@ -51,6 +82,10 @@ class Board:
         """
         if 'O-O' in to_coord:
             return
+        piece_to_remove = self.board_state[to_coord.x()][to_coord.y()]
+        if piece_to_remove:
+            self.remove_piece(piece_to_remove)
+
         piece = self.board_state[from_coord.x()][from_coord.y()]
         piece.set_position(to_coord)
         self.board_state[from_coord.x()][from_coord.y()] = None
@@ -64,6 +99,16 @@ class Board:
             if abs(from_coord.y() - to_coord.y()) == 2:
                 piece.set_en_passant(turn_number)
         return
+
+    def remove_piece(self, piece: Piece) -> None:
+        team = piece.get_team()
+        x, y = piece.get_position()
+        self.board_state[x][y] = None
+        if team == 'W':
+            self.w_piece_ref.remove(piece)
+        else:
+            self.b_piece_ref.remove(piece)
+                    
 
     def starting_board(self) -> list:
         """
@@ -96,22 +141,20 @@ class Board:
         Returns True if the player whose turn it is is in check, False otherwise
         """
         # Find King
-        for row in self.board_state:
-            for piece in row:
-                if piece:
-                    if isinstance(piece, King) and piece.get_team() == team:
-                        king_location = piece.get_position()
-                        break
+        piece_list = self.w_piece_ref if team == 'W' else self.b_piece_ref
+        enemy_piece_list = self.b_piece_ref if team == 'W' else self.w_piece_ref
+
+        for piece in piece_list:
+            if isinstance(piece, King) and piece.get_team() == team:
+                king_location = piece.get_position()
+                break
         
-        for row in self.board_state:
-            for piece in row:
-                if piece:
-                    if piece.get_team() != team:
-                        if king_location in piece.get_sees(self.board_state, turn_number):
-                            return True
+        for piece in enemy_piece_list:
+            if king_location in piece.get_sees(self.board_state, turn_number):
+                return True
 
     def update_all_sees(self, turn_number: int) -> None:
-        for row in self.board_state:
-            for piece in row:
-                if piece:
-                    piece.update_sees(self.board_state, turn_number)
+        for piece in self.w_piece_ref:
+            piece.update_sees(self.board_state, turn_number, self.b_piece_ref)
+        for piece in self.b_piece_ref:
+            piece.update_sees(self.board_state, turn_number, self.w_piece_ref)

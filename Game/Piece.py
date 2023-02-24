@@ -15,7 +15,7 @@ class Piece:
     
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.team == other.team
+            return self.team == other.team and self.pos == other.pos
     # ------------------------------------------- Getters -------------------------------------------
     def get_team(self) -> str:
         """
@@ -55,12 +55,15 @@ class Piece:
         """
         self.pos = position
     
-    def update_sees(self, board: list, turn_number: int) -> None:
+    def update_sees(self, board: list, turn_number: int, piece_list: list) -> None:
         """
         Updates what squares the piece can see
         """
         self.turn_number_ref = turn_number
-        self.sees = eval('self._' + str(self.move_type) + '_moves(self.directions, board)')  
+        parameters = '_moves(self.directions, board)'
+        if self.move_type == 'king':
+            parameters = '_moves(self.directions, piece_list, board)'
+        self.sees = eval('self._' + str(self.move_type) + parameters)  
     
     def _continuous_moves(self, directions: list, board: list) -> list:
         """
@@ -247,7 +250,7 @@ class King(Piece):
     def set_castle(self, val: bool) -> None:
         self.castle = val
 
-    def _king_moves(self, directions: list, board: list) -> list:
+    def _king_moves(self, directions: list, piece_list: list, board: list) -> list:
         """
         Gets first set of legal pawn moves based on piece's movement
         A king can move a single space in any direction
@@ -259,14 +262,14 @@ class King(Piece):
         y = 0 if self.team == 'W' else 7
         # Add castle possibility
         if self.castle:
-            if self.can_castle('short', board, y):
+            if self.can_castle('short', piece_list, board, y):
                 result.append('O-O')
-            if self.can_castle('long', board, y):
+            if self.can_castle('long', piece_list, board, y):
                 result.append('O-O-O')
 
         return result
     
-    def can_castle(self, side: str, board, y: int) -> bool:
+    def can_castle(self, side: str, piece_list: list, board, y: int) -> bool:
         """
         side: 'short' or 'long' for which side to castle
         board: 2D list representing current chess board
@@ -297,12 +300,12 @@ class King(Piece):
         for x in check_x_vals:
             square = Coord(x, y)
             opposing_team = 'W' if self.team == 'B' else 'B'
-            if self.check_visibility(opposing_team, board, square):
+            if self.check_visibility(opposing_team, piece_list, board, square):
                 return False
 
         return True
     
-    def check_visibility(self, opposing_team: str, board: list, square: Coord) -> bool:
+    def check_visibility(self, opposing_team: str, piece_list: list, board: list, square: Coord) -> bool:
         """
         return: True if opposing_team has a piece that can see square, False otherwise
         opposing_team: str, team who were checking
