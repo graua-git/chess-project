@@ -3,7 +3,7 @@ from Bots import *
 
 game = ChessGame()
 
-bot = Flau('B')
+bot = Flau('W')
 
 while not game.get_winner():
     if game.get_turn() == bot.team:

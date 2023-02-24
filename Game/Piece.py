@@ -35,6 +35,12 @@ class Piece:
         """
         return self.value
     
+    def get_name(self) -> str:
+        """
+        return: str, name of piece
+        """
+        return self.name
+
     def get_symbol(self) -> str:
         """
         return: str, 1 letter symbol representing piece P N B R Q or K

@@ -85,8 +85,8 @@ class Flau(Bot):
     def __init__(self, team: str, **kwargs):
         Bot.__init__(self, team)
         self.multipliers = {
-            'piece': -1,
-            'sees': .25,
+            'piece': -0.25,
+            'sees': .1,
             'opponent moves': .5,
             'material difference': 3
         }
