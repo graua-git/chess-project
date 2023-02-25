@@ -318,18 +318,13 @@ class King(Piece):
         board: 2D list representing chess board
         square: Coord, square we're checking to see if opposing team can see
         """
-        for row in board:
-            for piece in row:
-                if not piece:
-                    continue
-                if piece.get_team() != opposing_team:
-                    continue
-                if isinstance(piece, King):
-                    pos = piece.get_position()
-                    if opposing_team == 'W':
-                        return pos == 'g7' or pos == 'b7'
-                    else:
-                        return pos == 'g2' or pos == 'b2'
-                if square in piece.get_sees(board, self.turn_number_ref):
-                    return True
+        for piece in piece_list:
+            if isinstance(piece, King):
+                pos = piece.get_position()
+                if opposing_team == 'W':
+                    return pos == 'g7' or pos == 'b7'
+                else:
+                    return pos == 'g2' or pos == 'b2'
+            if square in piece.get_sees(board, self.turn_number_ref):
+                return True
         return False

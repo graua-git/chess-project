@@ -87,7 +87,7 @@ class Flau(Bot):
         self.multipliers = {
             'piece': -0.25,
             'sees': .1,
-            'opponent moves': .5,
+            'opponent moves': -.5,
             'material difference': 3
         }
         for key, value in kwargs.items():
