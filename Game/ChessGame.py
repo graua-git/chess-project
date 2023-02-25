@@ -162,8 +162,6 @@ class ChessGame:
         turn_number = self.get_turn_number()
         piece_list = self.board.get_white_pieces() if to_move == 'W' else self.board.get_black_pieces()
         for piece in piece_list:
-            if piece.get_team() != to_move:
-                continue
             from_coord = piece.get_position()
             for to_coord in piece.get_sees(self.board, turn_number):
                 try:
@@ -215,12 +213,12 @@ def print_all(game: ChessGame) -> None:
         print(game.get_turn() + " to move...")
 
 if __name__ == '__main__':
-    starting_position = '1. e4 e5 2. Nc3 Bc5 3. Bc4 Nc6 4. Qg4 Qf6 5. Nd5 Qxf2 6. Kd1 Na5 7. Nh3 Qd4 8. d3 Nxc4 9. c3 Qxd3 10. Ke1 Nf6 \
-                        11. Qxg7 d6 12. Nxf6 Ke7 13. Nd5 Kd7 14. Qxf7 Kc6 15. Nb4 Bxb4 16. Qd5 Qxd5 17. exd5 Kxd5 18. cxb4 Bxh3 19. gxh3 h5 20. b3 Kc6 \
-                        21. bxc4 a5 22. b5 Kc5 23. Be3 Kxc4 24. Rc1 Kxb5 25. Rxc7 Ka6 26. Rf1 Rac8 27. Rff7 Rxc7 28. Rxc7 b6 29. Rc6 Rd8 30. Rxb6 Ka7 \
-                        31. Rxd6 Kb7 32. Rxd8'
+    starting_position = '1. e3 e5 2. Bb5 Qh4 3. Bxd7 Bxd7 4. g4 Qxg4 5. Qxg4 Bxg4 6. f3 Bxf3 7. Nxf3 Nc6 8. Nxe5 Nxe5 9. b4 Bxb4 10. Nc3 Bxc3 11. dxc3 Rd8 12. Ba3 Rd6 13. Bxd6 \
+                        cxd6 14. h4 Ne7 15. h5 Kd7 16. a4 Rc8 17. c4 Rxc4 18. e4 Rxc2 19. a5'
     game = ChessGame(starting_position)
+    game.move('Nf3')
     print_all(game)
+    print(game.get_all_legal_moves())
     """
     while not game.get_winner():
         print_all(game)

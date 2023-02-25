@@ -87,6 +87,8 @@ class Move:
         to_coord: Coord, coordinate piece is moving to
         return: str, chess move notation 
         """
+        if self.piece is None:
+            raise InvalidMoveError
         result = ''
         pawn = isinstance(self.piece, Pawn)
         result += self.piece.get_symbol() if not pawn else ''

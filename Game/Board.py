@@ -155,6 +155,15 @@ class Board:
 
     def update_all_sees(self, turn_number: int) -> None:
         for piece in self.w_piece_ref:
+            if isinstance(piece, King):
+                w_king_ref = self.w_piece_ref.index(piece)
+                continue
             piece.update_sees(self.board_state, turn_number, self.b_piece_ref)
         for piece in self.b_piece_ref:
+            if isinstance(piece, King):
+                b_king_ref = self.b_piece_ref.index(piece)
+                continue
             piece.update_sees(self.board_state, turn_number, self.w_piece_ref)
+            
+        self.w_piece_ref[w_king_ref].update_sees(self.board_state, turn_number, self.b_piece_ref)
+        self.b_piece_ref[b_king_ref].update_sees(self.board_state, turn_number, self.w_piece_ref)
