@@ -26,3 +26,12 @@ TEST 5
 1. .045790
 2. .045422
 3. .045722
+
+
+move: 0.0928
+commit_move: 3.478 e-5
+update_all_sees: .0007722
+set_all_legal_moves: 0.0893
+    Move.__init__: .002796 x1841
+    Move.left_in_check: .001105 x2039
+    Board.in_check:
