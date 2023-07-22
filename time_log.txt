@@ -1,0 +1,37 @@
+Avg move time
+ALL TESTS
+64.379
+
+TEST 1
+1. .089362
+2. .094176
+3. .090928
+
+TEST 2
+1. .079431
+2. .078569
+3. .086784
+
+TEST 3
+1. .055745
+2. .055873
+3. .054447
+
+TEST 4
+1. .051403
+2. .050937
+3. .051188
+
+TEST 5
+1. .045790
+2. .045422
+3. .045722
+
+
+move: 0.0928
+commit_move: 3.478 e-5
+update_all_sees: .0007722
+set_all_legal_moves: 0.0893
+    Move.__init__: .002796 x1841
+    Move.left_in_check: .001105 x2039
+    Board.in_check:
