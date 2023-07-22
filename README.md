@@ -1,10 +1,10 @@
 # chess-project
 ## How to Play
-Run UI.py and follow prompts
+Run UI.py and follow the prompts
 ## Which piece is which?
 Each piece is denoted by two letters.
 The first one W or B represents the team the piece belongs to. 
-The second one represents which piece it is. For reference:
+The second one represents which piece it is. For reference: \n
 P: Pawn
 N: Knight
 B: Bishop
