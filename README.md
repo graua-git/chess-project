@@ -1,4 +1,4 @@
-# chess-project
+# Alex's Chess Project
 ## How to Play
 Run UI.py and follow the prompts
 ## Which piece is which?
