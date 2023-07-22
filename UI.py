@@ -4,19 +4,6 @@
 from Chess.ChessGame import *
 from Chess.Profile import *
 
-# ------------------------------- EDIT CONSTANTS -------------------------------
-"""
-Profile Options:
-Player: User controlled player through console inputs
-Kevin: Bot that picks a random move
-Caleb: Bot that takes pieces whenever possible
-Nick: Bot that positions its pieces
-Luke: Bot that evaluates different aspects of the board
-"""
-WHITE = Player('W')
-BLACK = Kevin('B')
-NUM_GAMES = 1
-# ------------------------------------------------------------------------------
 
 def play_games(white: Profile, black: Profile, num_games: int) -> dict:
     """
@@ -30,6 +17,7 @@ def play_games(white: Profile, black: Profile, num_games: int) -> dict:
         winner = play_game(white, black)
         data[winner] += 1
     return data
+
 
 def play_game(white: Profile, black: Profile) -> str:
     """
@@ -52,5 +40,37 @@ def play_game(white: Profile, black: Profile) -> str:
     print("Result: ", game.get_winner())
     return game.get_winner()
 
+
+def choose_settings():
+    """
+    Prompts user input to select the players for white and black, as well as the number of games
+    Returns the result as a tuple (white, black, num_games)
+    """
+    white_options = [None, Player('W'), Kevin('W'), Caleb('W'), Nick('W'), Luke('W')]
+    black_options = [None, Player('B'), Kevin('B'), Caleb('B'), Nick('B'), Luke('B')]
+    options_text = "Profile Options: \n \
+                    1) Player: User controlled player through console inputs \n \
+                    2) Kevin: Bot that picks a random move \n \
+                    3) Caleb: Bot that takes pieces whenever possible \n \
+                    4) Nick: Bot that positions its pieces \n \
+                    5) Luke: Bot that evaluates different aspects of the board"
+    print(options_text)
+    white_index = -1
+    while white_index > 5 or white_index < 0:
+        try:
+            white_index = int(input("SELECT WHITE PLAYER: "))
+        except ValueError:
+            pass
+    black_index = -1
+    while black_index > 5 or black_index < 0:
+        try:
+            black_index = int(input("SELECT BLACK PLAYER: "))
+        except ValueError:
+            pass
+    num_games = int(input("SELECT NUMBER OF GAMES: "))
+    return white_options[white_index], black_options[black_index], num_games
+
+
 if __name__ == '__main__':
-    print(str(play_games(WHITE, BLACK, NUM_GAMES)))
+    white, black, num_games = choose_settings()
+    print(str(play_games(white, black, num_games)))
