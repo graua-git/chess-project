@@ -24,16 +24,6 @@ class ChessGame:
 
     def __repr__(self):
         return str(self.board)
-    
-    def move_log_toJSON(self):
-        result = []
-        for i in range(0, int(len(self.move_log)), 2):
-            move = []
-            move.append(str(self.move_log[i]))
-            if i + 1 < len(self.move_log):
-                move.append(str(self.move_log[i + 1]))
-            result.append(move)
-        return json.dumps(result)
 
     # ------------------------------------------- Getters -------------------------------------------
     def get_move_log(self) -> str:

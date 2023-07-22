@@ -40,6 +40,21 @@ class Kevin(Profile):
         return random.choice(move_list)
 
 
+class Caleb(Profile):
+    def __init__(self, team: str):
+        Profile.__init__(self, team)
+
+    def pick_move(self, game: ChessGame) -> Move:
+        """
+        Caleb will take pieces whenever possible
+        """
+        move_list = game.get_legal_moves()
+        taking_moves = [move for move in move_list if 'x' in str(move)]
+        if len(taking_moves) > 0:
+            return random.choice(taking_moves)
+        return random.choice(move_list)
+
+
 class Nick(Profile):
     def __init__(self, team: str):
         Profile.__init__(self, team)
@@ -84,7 +99,7 @@ class Nick(Profile):
         return total_sees
 
 
-class Flau(Profile):
+class Luke(Profile):
     def __init__(self, team: str, **kwargs):
         Profile.__init__(self, team)
         self.multipliers = {
@@ -98,7 +113,7 @@ class Flau(Profile):
     
     def pick_move(self, game: ChessGame) -> Move:
         """
-        Flau evaluates the board in its current position, picking a move to improve it
+        Luke evaluates the board in its current position, picking a move to improve it
         """
         move_list = game.get_legal_moves()
 

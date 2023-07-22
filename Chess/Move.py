@@ -74,13 +74,6 @@ class Move:
     def __iter__(self):
         return iter(self.notation)
 
-    def toJSON(self):
-        result = {
-            "notation": self.notation,
-            "to_coord": str(self.to_coord),
-            "from_coord": str(self.from_coord)
-        }
-        return result
     # ------------------------------------------- Getters -------------------------------------------
     def get_board_state(self):
         """

@@ -17,13 +17,6 @@ class Piece:
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.team == other.team and self.pos == other.pos
-
-    def toJSON(self):
-        result = {
-            "name": self.name,
-            "team": self.team
-        }
-        return json.dumps(result)
     
     # ------------------------------------------- Getters -------------------------------------------
     def get_team(self) -> str:
